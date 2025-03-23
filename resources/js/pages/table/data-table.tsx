@@ -1,82 +1,84 @@
-'use client';
-
-import {
-    ColumnDef,
-    ColumnFiltersState,
-    SortingState,
-    VisibilityState,
-    flexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getSortedRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
-import axios from 'axios';
-import { ChevronDown } from 'lucide-react';
-import * as React from 'react';
-
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+    CellContext,
+    ColumnDef,
+    ColumnFiltersState,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getSortedRowModel,
+    HeaderContext,
+    SortingState,
+    useReactTable,
+    VisibilityState,
+} from '@tanstack/react-table';
+import axios from 'axios';
+import { ChevronDown } from 'lucide-react';
+import * as React from 'react';
 import styles from './AttendanceTable.module.css';
 import { DataTableColumnHeader } from './DataTableColumnHeader';
 
-interface AttendanceProps {
-    selectedMonth: string;
+interface CellProps {
+    date: string;
+    params: string;
 }
 
-type AttendanceData = {
-    pegawai_id: number;
-    pegawai_pin: string;
-    pegawai_nip: string | null;
-    pegawai_nama: string;
-    jabatan: string;
-    [key: string]: string | number | null;
+// Tipe data untuk siswa
+export type Siswa = {
+    siswa_id: number;
+    siswa_nama: string;
+    siswa_alamat: string;
+    siswa_status: number;
+    [key: string]: string | number; // Untuk mendukung kolom dinamis (tanggal)
 };
 
-export function AttendanceTable({ selectedMonth }: AttendanceProps) {
-    const [data, setData] = React.useState<AttendanceData[]>([]);
+export function DataTableDH({ date, params }: CellProps) {
+    const [data, setData] = React.useState<Siswa[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<Error | null>(null);
 
+    // Fetch data menggunakan Axios
     React.useEffect(() => {
-        const getData = async () => {
-            try {
-                setLoading(true);
-                const response = await axios.get(`/api/data?date=${selectedMonth}`);
-                setData(response.data);
-            } catch (error) {
-                setError(error as Error);
-            } finally {
+        axios
+            .get('/api/absensi/index?date=' + date + '&params=' + params) // Panggil endpoint API
+            .then((response) => {
+                setData(response.data); // Set data ke state
                 setLoading(false);
-            }
-        };
+                setError(null);
+            })
+            .catch((error) => {
+                setError(error as Error);
+                setLoading(false);
+            });
+    }, [date, params]);
 
-        getData();
-    }, [selectedMonth]);
+    // Generate kolom dinamis berdasarkan data
+    const columns: ColumnDef<Siswa>[] = React.useMemo(() => {
+        if (data.length === 0) return [];
 
-    const columns: ColumnDef<AttendanceData>[] = React.useMemo(
-        () => [
+        const dynamicColumns = Object.keys(data[0])
+            .filter((key) => /^\d{4}-\d{2}-\d{2}$/.test(key))
+            .map((dateKey) => ({
+                accessorKey: dateKey,
+                header: ({ column }: HeaderContext<Siswa, unknown>) => <DataTableColumnHeader column={column} title={dateKey} />,
+                cell: ({ row }: CellContext<Siswa, unknown>) => <div dangerouslySetInnerHTML={{ __html: row.getValue(dateKey) as string }} />,
+            }));
+
+        return [
             {
-                accessorKey: 'pegawai_nama',
+                accessorKey: 'siswa_nama',
                 header: ({ column }) => <DataTableColumnHeader column={column} title="Nama" />,
             },
             {
-                accessorKey: 'jabatan',
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Jabatan" />,
+                accessorKey: 'siswa_alamat',
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Alamat" />,
             },
-            // Dynamically create columns for each date
-            ...Object.keys(data[0] || {})
-                .filter((key) => key.match(/^\d{2}$/)) // Match keys that are dates (e.g., "01", "02", ..., "31")
-                .map((date) => ({
-                    accessorKey: date,
-                    header: ({ column }) => <DataTableColumnHeader column={column} title={date} />,
-                    cell: ({ row }) => <div dangerouslySetInnerHTML={{ __html: row.getValue(date) as string }} />,
-                })),
-        ],
-        [data],
-    );
+            ...dynamicColumns,
+        ];
+    }, [data]);
 
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -104,7 +106,6 @@ export function AttendanceTable({ selectedMonth }: AttendanceProps) {
     if (loading) {
         return <div>Loading...</div>;
     }
-
     if (error) {
         return <div>Error: {error.message}</div>;
     }
@@ -114,8 +115,8 @@ export function AttendanceTable({ selectedMonth }: AttendanceProps) {
             <div className="flex items-center py-4">
                 <Input
                     placeholder="Filter names..."
-                    value={(table.getColumn('pegawai_nama')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table.getColumn('pegawai_nama')?.setFilterValue(event.target.value)}
+                    value={(table.getColumn('siswa_nama')?.getFilterValue() as string) ?? ''}
+                    onChange={(event) => table.getColumn('siswa_nama')?.setFilterValue(event.target.value)}
                     className="max-w-sm"
                 />
                 <DropdownMenu>
@@ -143,7 +144,7 @@ export function AttendanceTable({ selectedMonth }: AttendanceProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div className="rounded-md border">
+            <div className={styles.tableWrapper}>
                 <Table className={styles.table}>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -161,10 +162,27 @@ export function AttendanceTable({ selectedMonth }: AttendanceProps) {
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                                    ))}
+                                <TableRow key={row.id}>
+                                    {row.getVisibleCells().map((cell) => {
+                                        let cellColor = '';
+
+                                        if (/^\d{4}-\d{2}-\d{2}$/.test(cell.column.id)) {
+                                            const cellValue = cell.getValue() as string;
+                                            if (cellValue === 'Tidak') {
+                                                cellColor = 'bg-red-500 text-white';
+                                            } else if (cellValue === 'Iya') {
+                                                cellColor = 'bg-green-400 text-slate-600';
+                                            } else if (cellValue === 'Bonus') {
+                                                cellColor = 'bg-white text-black';
+                                            }
+                                        }
+
+                                        return (
+                                            <TableCell className={cellColor} key={cell.id}>
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </TableCell>
+                                        );
+                                    })}
                                 </TableRow>
                             ))
                         ) : (

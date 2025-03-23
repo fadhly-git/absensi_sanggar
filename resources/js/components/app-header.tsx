@@ -17,7 +17,7 @@ import AppLogoIcon from './app-logo-icon';
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        url: '/dashboard',
+        url: 'atmin.dashboard',
         icon: Fingerprint,
     },
 ];
@@ -60,16 +60,14 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             ))}
                                         </div>
 
-                                        <div className="flex flex-col space-y-4">
-
-                                        </div>
+                                        <div className="flex flex-col space-y-4"></div>
                                     </div>
                                 </div>
                             </SheetContent>
                         </Sheet>
                     </div>
 
-                    <Link href="/dashboard" prefetch className="flex items-center space-x-2">
+                    <Link href={route('atmin.dashboard')} prefetch className="flex items-center space-x-2">
                         <AppLogo />
                     </Link>
 
@@ -80,7 +78,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 {mainNavItems.map((item, index) => (
                                     <NavigationMenuItem key={index} className="relative flex h-full items-center">
                                         <Link
-                                            href={item.url}
+                                            href={route(`${item.url}`)}
                                             className={cn(
                                                 navigationMenuTriggerStyle(),
                                                 page.url === item.url && activeItemStyles,
@@ -104,7 +102,6 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             <Button variant="ghost" size="icon" className="group h-9 w-9 cursor-pointer">
                                 <Search className="!size-5 opacity-80 group-hover:opacity-100" />
                             </Button>
-                            
                         </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sessions', function (Blueprint $table) {
+        Schema::create('absensis', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('id_siswa')->constrained('siswas');
+            $table->date('tanggal');
+            $table->text('notes')->nullable();
+            $table->boolean('bonus')->default(false);
             $table->timestamps();
         });
     }
@@ -22,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('absensis');
     }
 };
