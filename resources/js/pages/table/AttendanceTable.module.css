@@ -1,0 +1,68 @@
+.table-container {
+    display: block;
+    overflow: hidden;
+    position: relative;
+    overflow-x: auto;
+    white-space: nowrap;
+    max-width: 100%;
+    @apply border-collapse w-full;
+}
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.green {
+    --background: var(--table-green); /* Menggunakan variabel green */
+}
+
+.red {
+    --background: var(--red); /* Menggunakan variabel red */
+}
+
+.white {
+    --background: var(--foreground); /* Menggunakan variabel foreground */
+}
+
+.table {
+    @apply border-collapse w-full;
+    width: 100%;
+    cursor: grab;
+}
+
+.table th,
+.table td {
+    border: 1px var(--border) solid;
+    padding: 8px;
+}
+
+.table th {
+    position: sticky;
+    top: 0;
+    background-color: var(--background);
+    z-index: 2;
+}
+
+.table td:first-child,
+.table th:first-child {
+    position: sticky;
+    left: 0;
+    background-color: var(--background);
+    z-index: 1;
+}
+
+.table th:first-child {
+    z-index: 3;
+}
+
+.table th,
+.table td {
+    text-align: left;
+}
+
+.table tr:nth-child(even) {
+    background-color: var(--zebra); /* Menggunakan variabel zebra */
+}
+
+.table tr:hover {
+    opacity: 50%; /* Menggunakan variabel hover */
+}
