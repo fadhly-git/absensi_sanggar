@@ -1,218 +1,119 @@
+import {
+    ColumnDef, ColumnFiltersState, SortingState, VisibilityState,
+    flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable
+} from '@tanstack/react-table';
+import { ArrowUpDown, ChevronDown, Edit, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import {
-    ColumnDef,
-    ColumnFiltersState,
-    SortingState,
-    VisibilityState,
-    flexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getSortedRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
-import { ArrowUpDown, ChevronDown } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { type DataKeuangan, deleteTransaction } from '@/services/keuanganApi';
 import { KeuanganMskEditTabs } from './form-edit';
 import { KeuanganKlrEditTabs } from './form-edit-klr';
 
-export type DataKeuangan = {
-    id: number;
-    keterangan: string;
-    jumlah: number;
-    tanggal: string;
-};
-
-export const formatNumber = (value: number) => {
-    if (value == null) {
-        return '0'; // Fallback jika nilai adalah null atau undefined
-    } // Konversi nilai ke string
-    return 'Rp' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-};
-
-export const columns: ColumnDef<DataKeuangan>[] = [
-    {
-        accessorKey: 'tanggal',
-        header: ({ column }) => {
-            return (
-                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-                    Tanggal
-                    <ArrowUpDown />
-                </Button>
-            );
-        },
-        cell: ({ row }) => <div className="w-fit">{row.getValue('tanggal')}</div>,
-    },
-    {
-        accessorKey: 'keterangan',
-        header: ({ column }) => {
-            return (
-                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-                    Keterangan
-                    <ArrowUpDown />
-                </Button>
-            );
-        },
-        cell: ({ row }) => <div>{row.getValue('keterangan')}</div>,
-    },
-    {
-        accessorKey: 'jumlah',
-        header: ({ column }) => {
-            return (
-                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-                    Jumlah
-                    <ArrowUpDown />
-                </Button>
-            );
-        },
-        cell: ({ row }) => <div>{formatNumber(row.getValue('jumlah'))}</div>,
-    },
-];
-
 interface DataTableKeuanganProps {
     datas: DataKeuangan[];
-    type: string;
-    success: boolean;
-    setSuccess: () => void;
+    type: 'masuk' | 'keluar';
+    isLoading: boolean;
 }
 
-export function DataTableKeuangan({ datas, type, setSuccess, success }: DataTableKeuanganProps) {
-    const [data, setData] = useState<DataKeuangan[]>([]);
+const formatNumber = (value: number) => {
+    if (value == null) return 'Rp 0';
+    return 'Rp ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
 
-    useEffect(() => {
-        setData(datas);
-    }, [datas, success]);
+export function DataTableKeuangan({ datas, type, isLoading }: DataTableKeuanganProps) {
+    const queryClient = useQueryClient();
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [selectedData, setSelectedData] = useState<DataKeuangan | null>(null);
 
-    const [sorting, setSorting] = React.useState<SortingState>([]);
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-    const [rowSelection, setRowSelection] = React.useState({});
-    const [openEdit, setOpenEdit] = React.useState(false);
-    const [openKlr, setOpenKlr] = React.useState(false);
-    const [selectedData, setSelectedData] = React.useState<DataKeuangan | null>(null);
-
-    const table = useReactTable({
-        data,
-        columns,
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-            rowSelection,
+    const deleteMutation = useMutation({
+        mutationFn: deleteTransaction,
+        onSuccess: (response) => {
+            toast.success(response.message || 'Data berhasil dihapus!');
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['saldo'] });
+        },
+        onError: (error) => {
+            toast.error(error.message || 'Gagal menghapus data.');
         },
     });
 
-    const handleMskRowClick = (row: DataKeuangan) => {
-        setSelectedData(row);
-        setOpenEdit(true);
+    const handleDelete = (id: number) => {
+        if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+            deleteMutation.mutate(id);
+        }
     };
 
-    const handleKlrRowClick = (row: DataKeuangan) => {
-        setSelectedData(row);
-        setOpenKlr(true);
+    const handleEdit = (data: DataKeuangan) => {
+        setSelectedData(data);
+        setIsEditDialogOpen(true);
     };
+
+    const columns: ColumnDef<DataKeuangan>[] = [
+        { accessorKey: 'tanggal', header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Tanggal <ArrowUpDown className="ml-2 h-4 w-4" /></Button> },
+        { accessorKey: 'keterangan', header: 'Keterangan' },
+        { accessorKey: 'jumlah', header: () => <div className="text-right">Jumlah</div>, cell: ({ row }) => <div className="text-right font-medium">{formatNumber(row.getValue('jumlah'))}</div> },
+        {
+            id: 'actions',
+            header: () => <div className="text-center">Aksi</div>,
+            cell: ({ row }) => (
+                <div className="text-center space-x-2">
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEdit(row.original)}><Edit className="h-4 w-4" /></Button>
+                    <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDelete(row.original.id)} disabled={deleteMutation.isPending && deleteMutation.variables === row.original.id}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+            ),
+        },
+    ];
+
+    const table = useReactTable({
+        data: datas,
+        columns,
+        state: { sorting, columnFilters, columnVisibility },
+        onSortingChange: setSorting,
+        onColumnFiltersChange: setColumnFilters,
+        onColumnVisibilityChange: setColumnVisibility,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+    });
 
     return (
         <>
-            <KeuanganMskEditTabs open={openEdit} openDialog={() => setOpenEdit(false)} success={setSuccess} data={selectedData} />
-            <KeuanganKlrEditTabs open={openKlr} openDialog={() => setOpenKlr(false)} success={setSuccess} data={selectedData} />
+            {type === 'masuk' 
+                ? <KeuanganMskEditTabs open={isEditDialogOpen} openDialog={() => setIsEditDialogOpen(false)} data={selectedData} />
+                : <KeuanganKlrEditTabs open={isEditDialogOpen} openDialog={() => setIsEditDialogOpen(false)} data={selectedData} />
+            }
             <div className="mx-2 w-auto items-center justify-center lg:mx-4">
-                <div className="w-fit">
-                    <h1 className="mt-6 text-xl font-bold capitalize">Tabel Keuangan {type}</h1>
-                </div>
+                <div className="w-fit"><h1 className="mt-6 text-xl font-bold capitalize">Tabel Keuangan {type}</h1></div>
                 <div className="mx-2 flex items-center gap-2 py-4">
-                    <Input
-                        placeholder="Filter keterangan..."
-                        value={(table.getColumn('keterangan')?.getFilterValue() as string) ?? ''}
-                        onChange={(event) => table.getColumn('keterangan')?.setFilterValue(event.target.value)}
-                        className="max-w-sm"
-                    />
-
+                    <Input placeholder="Filter keterangan..." value={(table.getColumn('keterangan')?.getFilterValue() as string) ?? ''} onChange={(event) => table.getColumn('keterangan')?.setFilterValue(event.target.value)} className="max-w-sm" />
                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="ml-auto">
-                                Columns <ChevronDown />
-                            </Button>
-                        </DropdownMenuTrigger>
+                        <DropdownMenuTrigger asChild><Button variant="outline" className="ml-auto">Columns <ChevronDown className="ml-2 h-4 w-4" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            {table
-                                .getAllColumns()
-                                .filter((column) => column.getCanHide())
-                                .map((column) => {
-                                    return (
-                                        <DropdownMenuCheckboxItem
-                                            key={column.id}
-                                            className="capitalize"
-                                            checked={column.getIsVisible()}
-                                            onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                                        >
-                                            {column.id}
-                                        </DropdownMenuCheckboxItem>
-                                    );
-                                })}
+                            {table.getAllColumns().filter(column => column.getCanHide()).map(column => (<DropdownMenuCheckboxItem key={column.id} className="capitalize" checked={column.getIsVisible()} onCheckedChange={(value) => column.toggleVisibility(!!value)}>{column.id}</DropdownMenuCheckboxItem>))}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
                 <div className="rounded-md border">
                     <Table>
                         <TableHeader>
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id} className="capitalize">
-                                    {headerGroup.headers.map((header) => {
-                                        return (
-                                            <TableHead key={header.id}>
-                                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                            </TableHead>
-                                        );
-                                    })}
-                                </TableRow>
-                            ))}
+                            {table.getHeaderGroups().map(headerGroup => (<TableRow key={headerGroup.id}>{headerGroup.headers.map(header => (<TableHead key={header.id}>{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}</TableHead>))}</TableRow>))}
                         </TableHeader>
                         <TableBody>
-                            {table.getRowModel().rows?.length ? (
-                                table.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                        className="mx-auto capitalize"
-                                        key={row.id}
-                                        data-state={row.getIsSelected() && 'selected'}
-                                        onClick={() => (type === 'masuk' ? handleMskRowClick(row.original) : handleKlrRowClick(row.original))}
-                                    >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                                        No results.
-                                    </TableCell>
-                                </TableRow>
-                            )}
+                            {isLoading ? Array.from({ length: 5 }).map((_, i) => <TableRow key={i}><TableCell colSpan={columns.length}><Skeleton className="h-8 w-full" /></TableCell></TableRow>) :
+                                (table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (<TableRow key={row.id}>{row.getVisibleCells().map(cell => (<TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>))}</TableRow>)) :
+                                    <TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Tidak ada hasil.</TableCell></TableRow>)}
                         </TableBody>
                     </Table>
-                </div>
-                <div className="flex items-center justify-end space-x-2 py-4">
-                    {/* <div className="text-muted-foreground flex-1 text-sm">
-                    {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
-                </div>
-                <div className="space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                        Previous
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                        Next
-                    </Button>
-                </div> */}
                 </div>
             </div>
         </>

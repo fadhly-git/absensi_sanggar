@@ -1,180 +1,100 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import axios from 'axios';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
-import { toast, Toaster } from 'sonner';
-import { DatePicker } from '@/components/costum-date-picker';
-import { DataKeuangan, formatNumber } from './data-table';
 import { LoaderCircle } from 'lucide-react';
+
+// Impor dari service API, bukan dari data-table
+import { type DataKeuangan, type UpdateTransactionPayload, updateTransaction } from '@/services/keuanganApi'; 
+import { DatePicker } from '../costum-date-picker';
 
 interface UangMasukField {
     open: boolean;
     openDialog: () => void;
     data: DataKeuangan | null;
-    success: () => void;
 }
 
-export function KeuanganMskEditTabs({ open, openDialog, data, success }: UangMasukField) {
-    // State untuk menyimpan data uang masuk dan uang keluar
-    const [uangMasukFields, setUangMasukFields] = useState([{ keterangan: '', amount: '', displayAmount: '' }]);
-    const [uangKeluarFields, setUangKeluarFields] = useState([{ keterangan: '', amount: '', displayAmount: '' }]);
-    const [id, setId] = useState(data?.id);
-    const [keterangan, setKeterangan] = useState(data?.keterangan);
-    const [jumlah, setJumlah] = useState(data?.jumlah);
-    const [tanggal, setTanggal] = useState<Date | undefined>(data?.tanggal ? new Date(data.tanggal) : undefined);
-    const [formattedValue, setFormattedValue] = useState(formatNumber(Number(data?.jumlah)));
-    const [loading, setLoading] = useState(false);
+// Fungsi format angka bisa kita letakkan di sini atau di file utils terpisah
+const formatNumberDisplay = (value: string) => 'Rp. ' + value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+export function KeuanganMskEditTabs({ open, openDialog, data }: UangMasukField) {
+    const [keterangan, setKeterangan] = useState('');
+    const [amount, setAmount] = useState('');
+    const [displayAmount, setDisplayAmount] = useState('');
+    const [date, setDate] = useState<Date | undefined>();
+
+    const queryClient = useQueryClient();
 
     useEffect(() => {
-        setId(data?.id);
-        setKeterangan(data?.keterangan);
-        setJumlah(data?.jumlah);
-        setTanggal(data?.tanggal ? new Date(data.tanggal) : undefined);
-        setFormattedValue(formatNumber(Number(data?.jumlah)));
-    }, [data?.keterangan, data?.jumlah, data?.tanggal, data?.id]);
-
-    useEffect(() => {
-        setUangMasukFields([{ keterangan: keterangan || '', amount: jumlah?.toString() || '', displayAmount: formattedValue || '' }]);
-    }, [keterangan, jumlah, formattedValue]);
-
-    const handleDelete = async () => {
-        setLoading(true);
-        try {
-            const response = await axios.delete(`/api/atmin/keuangan/delete/${id}`);
-            if (response.data.success) {
-                setLoading(false);
-                toast.success('Data berhasil dihapus!');
-            } else {
-                setLoading(false);
-                toast.error('Gagal menghapus data: ', { description: response.data.message });
-            }
-        } catch (error) {
-            setLoading(false);
-            toast.error('Terjadi kesalahan saat menghapus data.', {
-                description: String(error),
-            });
-        } finally {
-            success();
-            setLoading(false);
-            setTimeout(() => {
-                openDialog();
-            }, 5000);
+        if (data) {
+            setKeterangan(data.keterangan);
+            setAmount(String(data.jumlah));
+            setDisplayAmount(formatNumberDisplay(String(data.jumlah)));
+            setDate(new Date(data.tanggal));
         }
+    }, [data]);
+
+    const mutation = useMutation({
+        mutationFn: updateTransaction,
+        onSuccess: (response) => {
+            toast.success(response.message || 'Data berhasil diperbarui!');
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['saldo'] });
+            openDialog(); // Tutup dialog
+        },
+        onError: (error) => {
+            toast.error(error.message || 'Gagal memperbarui data.');
+        },
+    });
+
+    const handleAmountChange = (value: string) => {
+        const rawValue = value.replace(/\D/g, '');
+        setAmount(rawValue);
+        setDisplayAmount(rawValue ? formatNumberDisplay(rawValue) : '');
     };
 
-    // Fungsi untuk submit form
-    const handleSubmit = async (type: 'masuk' | 'keluar') => {
-        setUangMasukFields([{ keterangan: keterangan || '', amount: jumlah?.toString() || '', displayAmount: formattedValue || '' }]);
-        const data = type === 'masuk' ? uangMasukFields : uangKeluarFields;
+    const handleSubmit = () => {
+        const formattedDate = date ? format(date, 'yyyy-MM-dd') : null;
 
-        // Validasi data
-        if (!data.every((item) => item.keterangan && item.amount)) {
-            toast.error('Mohon isi semua field!');
+        if (!keterangan || !amount || !formattedDate || !data) {
+            toast.error('Mohon lengkapi semua field!');
             return;
         }
 
-        // Pastikan tanggal telah dipilih
-        if (!tanggal) {
-            toast.error('Mohon pilih tanggal terlebih dahulu!');
-            return;
-        }
+        const payload: UpdateTransactionPayload = {
+            type: 'masuk',
+            tanggal: formattedDate,
+            data: [{ amount, keterangan }],
+        };
 
-        try {
-            // Kirim data ke backend menggunakan axios
-            const response = await axios.put(`/api/atmin/keuangan/update/${id}`, {
-                type,
-                tanggal: format(tanggal, 'yyyy-MM-dd'),
-                data,
-            });
-
-            if (response.data.success) {
-                toast.success('Data berhasil diupdate!');
-            } else {
-                toast.error('Gagal mengupdate data: ', { description: response.data.message });
-            }
-        } catch (error) {
-            toast.error('Terjadi kesalahan saat mengupdate data.', {
-                description: String(error),
-            });
-        } finally {
-            // Reset form
-            setUangMasukFields([{ keterangan: '', amount: '', displayAmount: '' }]);
-            setUangKeluarFields([{ keterangan: '', amount: '', displayAmount: '' }]);
-            success();
-            setTimeout(() => {
-                openDialog();
-            }, 5000);
-        }
+        mutation.mutate({ id: data.id, payload });
     };
 
     return (
-        <>
-            <Toaster />
-            <Drawer open={open} onClose={openDialog}>
-                <DrawerContent>
-                    <div className="mx-auto w-full max-w-xl">
-                        <DrawerHeader>
-                            <DrawerTitle>Edit Data Keuangan</DrawerTitle>
-                            <DrawerDescription>Isi form di bawah ini untuk mengedit data keuangan.</DrawerDescription>
-                        </DrawerHeader>
-                        {data === null ? (
-                            <div>error</div>
-                        ) : (
-                            <div className="mb-12 p-4">
-                                <div className="flex items-center justify-center space-x-2">
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Uang Masuk</CardTitle>
-                                            <CardDescription>Edit pemasukan Anda di sini.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            <Label>Tanggal</Label>
-                                            <DatePicker date={tanggal ? new Date(tanggal) : undefined} setDate={setTanggal} />
-                                            <div className="flex items-end gap-2">
-                                                <div className="flex-1 space-y-1">
-                                                    <Label>Keterangan</Label>
-                                                    <Input
-                                                        value={keterangan || ''}
-                                                        onChange={(e) => setKeterangan(e.target.value)}
-                                                        placeholder="Contoh: Gaji Bulanan"
-                                                    />
-                                                </div>
-                                                <div className="flex-1 space-y-1">
-                                                    <Label>Jumlah</Label>
-                                                    <Input
-                                                        type="text" // Gunakan type text agar tidak terbatas pada input number
-                                                        value={formattedValue || ''}
-                                                        onChange={(e) => {
-                                                            const rawValue = e.target.value.replace(/\D/g, '');
-                                                            setJumlah(Number(rawValue));
-                                                            setFormattedValue(formatNumber(Number(rawValue)));
-                                                        }}
-                                                        placeholder="5.000.000"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                        <CardFooter>
-                                            <Button variant="destructive" onClick={() => handleDelete()} disabled={loading}>
-                                                {loading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                                                Hapus
-                                            </Button>
-                                            <Button className="ml-auto" onClick={() => handleSubmit('masuk')} disabled={loading}>
-                                                {loading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                                                Simpan Uang Masuk
-                                            </Button>
-                                        </CardFooter>
-                                    </Card>
-                                </div>
-                            </div>
-                        )}
+        <Drawer open={open} onOpenChange={openDialog}>
+            <DrawerContent>
+                <div className="mx-auto w-full max-w-xl p-4">
+                    <DrawerHeader>
+                        <DrawerTitle>Edit Data Uang Masuk</DrawerTitle>
+                        <DrawerDescription>Ubah data transaksi yang sudah ada.</DrawerDescription>
+                    </DrawerHeader>
+                    <div className="space-y-4 p-4">
+                        <div><Label>Tanggal</Label><DatePicker date={date} setDate={setDate} /></div>
+                        <div><Label>Keterangan</Label><Input value={keterangan} onChange={(e) => setKeterangan(e.target.value)} /></div>
+                        <div><Label>Jumlah</Label><Input value={displayAmount} onChange={(e) => handleAmountChange(e.target.value)} /></div>
+                        <div className="flex justify-end">
+                            <Button onClick={handleSubmit} disabled={mutation.isPending}>
+                                {mutation.isPending && <LoaderCircle className='mr-2 h-4 w-4 animate-spin' />}
+                                Perbarui Data
+                            </Button>
+                        </div>
                     </div>
-                </DrawerContent>
-            </Drawer>
-        </>
+                </div>
+            </DrawerContent>
+        </Drawer>
     );
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AbsensiController;
@@ -14,6 +15,8 @@ Route::get('/get-absensi/index', [AbsensiController::class,'generateWeeklyReport
 
 //atmin api
 Route::group(['prefix' => 'atmin'], function () {
+
+    Route::get('/dashboard-summary', [DashboardController::class, 'getSummary']);
 
     // daftar hadir api
     Route::group(['prefix' => 'absensi'], function () {
