@@ -8,39 +8,48 @@ use App\Models\Siswa;
 
 class SiswaCon extends Controller
 {
-    public function index(){
-        $siswa = Siswa::where('deleted', 0)->orderBy('nama', 'asc')->get();
+    public function index(Request $request)
+    {
+        $query = Siswa::query()->orderBy('nama', 'asc');
+
+        if ($request->has('search')) {
+            $query->where('nama', 'like', '%' . $request->search . '%');
+        }
+        
+        // Eager load relasi jika dibutuhkan di frontend
+        // $query->with('relasi'); 
+
+        return response()->json($query->get());
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'nama' => 'required|string|max:255',
+            'alamat' => 'nullable|string',
+            'status' => 'required|boolean',
+        ]);
+
+        $siswa = Siswa::create($validated);
+        return response()->json($siswa, 201);
+    }
+
+    public function update(Request $request, Siswa $siswa)
+    {
+        $validated = $request->validate([
+            'nama' => 'required|string|max:255',
+            'alamat' => 'nullable|string',
+            'status' => 'required|boolean',
+        ]);
+
+        $siswa->update($validated);
         return response()->json($siswa);
     }
 
-    public function store(){
-        $requestData = request()->all();
-        $siswa = new Siswa();
-        $siswa->nama = $requestData['nama'];
-        $siswa->alamat = $requestData['alamat'];
-        $siswa->status = $requestData['status'];
-        $siswa->save();
-
-        return response()->json(['success' => true ]);
-    }
-
-    public function update($id){
-        $requestData = request()->all();
-        $siswa = Siswa::find($id);
-        $siswa->nama = $requestData['nama'];
-        $siswa->alamat = $requestData['alamat'];
-        $siswa->status = $requestData['status'];
-        $siswa->save();
-
-        return response()->json(['success' => true]);
-    }
-
-    public function delete($id){
-        $siswa = Siswa::find($id);
-        $siswa->deleted = 1;
-        $siswa->save();
-
-        return response()->json(['success' => true]);
+    public function destroy(Siswa $siswa)
+    {
+        $siswa->delete();
+        return response()->json(null, 204);
     }
 
     public function getCountSiswaAktif(){
