@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Siswa;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -39,7 +41,8 @@ class AbsensiReportService
 
         // Generate semua hari Minggu dalam rentang tanggal
         $sundays = [];
-        $current = $startDate->copy()->startOfWeek(Carbon::SUNDAY);
+        // 2. Ubah Carbon::SUNDAY menjadi CarbonInterface::SUNDAY
+        $current = $startDate->copy()->startOfWeek(CarbonInterface::SUNDAY);
         while ($current <= $endDate) {
             if ($current >= $startDate) {
                 $sundays[] = $current->format('Y-m-d');
@@ -78,5 +81,63 @@ class AbsensiReportService
 
         // Paginasi
         return $query->paginate($limit, ['*'], 'page', $page);
+    }
+
+    /**
+     * Mendapatkan siswa yang tidak diabsen pada tanggal tertentu.
+     * Logika dipindahkan dari AbsensiController@getAbsentStudents.
+     *
+     * @param string $date (format Y-m-d)
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAbsentStudentsForDate(string $date)
+    {
+        return Siswa::query()
+            ->where('status', 1) // Asumsi hanya cek siswa aktif
+            ->whereNull('deleted_at')
+            ->whereDoesntHave('absensi', function ($query) use ($date) {
+                $query->whereDate('tanggal', $date);
+            })
+            ->orderBy('nama', 'ASC')
+            ->select('id', 'nama', 'alamat')
+            ->get();
+    }
+
+    /**
+     * Membandingkan jumlah siswa pada 2 pertemuan terakhir.
+     * Logika dipindahkan dari AbsensiController@jumlahSiswaMasuk.
+     *
+     * @return array
+     */
+    public function getAttendanceCountComparison(): array
+    {
+        $recentDates = DB::table('absensis')
+            ->select('tanggal')
+            ->distinct()
+            ->orderBy('tanggal', 'desc')
+            ->limit(2)
+            ->pluck('tanggal');
+
+        if ($recentDates->isEmpty()) {
+            return ['minggu_ini' => 0, 'minggu_sebelumnya' => 0];
+        }
+
+        $jumlahSiswaMingguIni = DB::table('absensis')
+            ->where('tanggal', $recentDates->first())
+            ->distinct()
+            ->count('id_siswa');
+
+        $jumlahSiswaMingguLalu = 0;
+        if ($recentDates->count() > 1) {
+            $jumlahSiswaMingguLalu = DB::table('absensis')
+                ->where('tanggal', $recentDates->last())
+                ->distinct()
+                ->count('id_siswa');
+        }
+
+        return [
+            'minggu_ini' => $jumlahSiswaMingguIni,
+            'minggu_sebelumnya' => $jumlahSiswaMingguLalu,
+        ];
     }
 }
