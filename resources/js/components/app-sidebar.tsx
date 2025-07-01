@@ -14,17 +14,17 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Siswa',
-        url: 'siswa',
+        url: 'atmin.siswa',
         icon: FileUser,
     },
     {
         title: 'Daftar Hadir',
-        url: 'daftar-hadir',
+        url: 'atmin.daftar-hadir',
         icon: FingerprintIcon,
     },
     {
         title: 'keuangan',
-        url: 'keuangan',
+        url: 'atmin.keuangan',
         icon: CircleDollarSignIcon,
     },
 ];

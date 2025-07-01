@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { LoaderCircle } from 'lucide-react';
 
 // Impor dari service API, bukan dari data-table
-import { type DataKeuangan, type UpdateTransactionPayload, updateTransaction } from '@/services/keuanganApi'; 
+import { type DataKeuangan, type UpdateTransactionPayload, updateTransaction } from '@/services/keuanganApi';
 import { DatePicker } from '../costum-date-picker';
 
 interface UangMasukField {
