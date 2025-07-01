@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
@@ -47,7 +48,7 @@ export function useAuth(): UseAuthReturn {
             const response = await axios.get<SessionData>(route('api.check-session'));
             const data = response.data;
 
-            // console.log('Session check response:', data); // Debug logging
+            console.log('Session check response:', data); // Debug logging
 
             if (data.valid && data.user) {
                 setUser(data.user);

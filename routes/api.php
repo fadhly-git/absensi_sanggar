@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\SiswaController;
-use App\Http\Controllers\KeuanganCon as KeuanganController;
+use App\Http\Controllers\KeuanganController;
 
 // Session check route - PENTING: gunakan web middleware untuk session-based auth
 Route::get('check-session', [AuthenticatedSessionController::class, 'checkSession'])
@@ -32,6 +32,9 @@ Route::prefix('admin')->middleware(['web', 'auth'])->group(function () {
         Route::get('weekly-report', [AbsensiController::class, 'generateWeeklyReport'])
             ->name('api.admin.absensi.weekly-report');
 
+        Route::get('hadir-minggu-ini', [AbsensiController::class, 'getSiswaHadirMingguIni'])
+            ->name('api.admin.absensi.hadir-minggu-ini');
+
         Route::get('weekly-report/export', [AbsensiController::class, 'exportWeeklyReport'])
             ->name('api.admin.absensi.weekly-report.export');
 
@@ -43,6 +46,9 @@ Route::prefix('admin')->middleware(['web', 'auth'])->group(function () {
 
         Route::post('/', [AbsensiController::class, 'store'])
             ->name('api.admin.absensi.store');
+
+        Route::delete('/{id}', [AbsensiController::class, 'destroy'])
+            ->name('api.admin.absensi.destroy');
     });
 
     // Siswa - Updated routes for simplified structure
@@ -86,16 +92,12 @@ Route::prefix('admin')->middleware(['web', 'auth'])->group(function () {
     });
 
     // Keuangan
-    Route::prefix('keuangan')->group(function () {
-        Route::get('/', [KeuanganController::class, 'getUangByDate'])
-            ->name('api.admin.keuangan.index');
-        Route::post('/', [KeuanganController::class, 'store'])
-            ->name('api.admin.keuangan.store');
-        Route::put('{id}', [KeuanganController::class, 'update'])
-            ->name('api.admin.keuangan.update');
-        Route::delete('{id}', [KeuanganController::class, 'delete'])
-            ->name('api.admin.keuangan.destroy');
-        Route::get('saldo', [KeuanganController::class, 'getSaldo'])
-            ->name('api.admin.keuangan.saldo');
+    Route::prefix('keuangan')->name('api.admin.keuangan.')->group(function () {
+        Route::get('/', [KeuanganController::class, 'getTransactions'])->name('index');
+        Route::post('/', [KeuanganController::class, 'store'])->name('store');
+        Route::put('{id}', [KeuanganController::class, 'update'])->name('update');
+        Route::delete('{id}', [KeuanganController::class, 'destroy'])->name('destroy');
+        Route::get('saldo', [KeuanganController::class, 'getSaldo'])->name('saldo');
+        Route::get('export', [KeuanganController::class, 'exportFinancialReport'])->name('export');
     });
 });

@@ -70,7 +70,14 @@ class AbsensiReportService
         $totalQuery = clone $baseQuery;
         $total = $totalQuery->count();
 
-        // Add attendance columns using LEFT JOIN for better performance
+        // Get paginated siswa
+        $offset = ($page - 1) * $limit;
+        $siswaData = $baseQuery->skip($offset)->take($limit)->get();
+
+        // Ambil hanya id siswa yang ada di halaman ini
+        $siswaIds = $siswaData->pluck('siswa_id')->toArray();
+
+        // Ambil absensi hanya untuk siswa di halaman ini
         $attendanceSubquery = DB::table('absensis as a')
             ->select([
                 'a.id_siswa',
@@ -78,14 +85,11 @@ class AbsensiReportService
                 DB::raw('CASE WHEN a.bonus = 1 THEN "B" ELSE "H" END as status')
             ])
             ->whereBetween('a.tanggal', [$startDate, $endDate])
-            ->whereIn('a.tanggal', $sundays);
+            ->whereIn('a.tanggal', $sundays)
+            ->whereIn('a.id_siswa', $siswaIds);
 
         // Create pivot table for attendance
         $attendanceData = $attendanceSubquery->get()->groupBy('id_siswa');
-
-        // Get paginated siswa
-        $offset = ($page - 1) * $limit;
-        $siswaData = $baseQuery->skip($offset)->take($limit)->get();
 
         // Merge attendance data with siswa data
         $results = $siswaData->map(function ($siswa) use ($attendanceData, $sundays) {

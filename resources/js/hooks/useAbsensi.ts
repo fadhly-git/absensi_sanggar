@@ -5,7 +5,6 @@ import type { AbsensiWeeklyFilter } from '@/types/absensi';
 import { toast } from 'sonner';
 
 export function useWeeklyAbsensi(params: AbsensiWeeklyFilter) {
-    console.warn('LAYER 2 (HOOK): Hook menerima parameter ini:', params);
     return useQuery({
         queryKey: ['weeklyAbsensi', params],
         queryFn: () => AbsensiService.getWeeklyReport(params),
@@ -28,13 +27,11 @@ export function useAttendanceCount(periode: string, mode: 'tahun' | 'bulan') {
     });
 }
 
-export function useActiveSiswa() {
+export function useActiveSiswa(tanggal: string) {
     return useQuery({
-        queryKey: ['activeSiswa'],
-        queryFn: () => AbsensiService.getActiveSiswa(),
-        staleTime: 30 * 60 * 1000, // 30 minutes - siswa data jarang berubah
-        gcTime: 60 * 60 * 1000, // 1 hour
-        retry: 2
+        queryKey: ['activeSiswa', tanggal],
+        queryFn: () => AbsensiService.getActiveSiswa(tanggal),
+        enabled: !!tanggal
     });
 }
 

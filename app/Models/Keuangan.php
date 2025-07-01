@@ -2,70 +2,59 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes; // 1. Tambahkan use statement
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Keuangan extends Model
 {
-    use SoftDeletes; // 2. Gunakan trait SoftDeletes
+    use HasFactory, SoftDeletes;
 
     protected $table = 'keuangans';
 
-    /**
-     * Atribut yang dapat diisi. 'saldo_terakhir' telah dihapus.
-     */
     protected $fillable = [
-        'uang_masuk',
-        'keterangan_masuk',
-        'uang_keluar',
-        'keterangan_keluar',
         'tanggal',
+        'uang_masuk',
+        'uang_keluar',
+        'keterangan_masuk',
+        'keterangan_keluar',
     ];
 
-    // Method-method query scope Anda sudah baik, bisa kita sederhanakan sedikit
-    // dengan menggunakan query builder dari Eloquent langsung.
+    protected $casts = [
+        'tanggal' => 'date',
+        'uang_masuk' => 'decimal:2',
+        'uang_keluar' => 'decimal:2',
+    ];
 
-    public static function getUangMasukByDateQuery($date, $params)
+    // Accessor untuk mendapatkan jumlah berdasarkan tipe
+    public function getJumlahAttribute()
     {
-        $query = self::select('id', 'tanggal', 'keterangan_masuk AS keterangan', 'uang_masuk AS jumlah')
-            ->where('uang_masuk', '!=', 0); // Soft delete akan otomatis ditangani oleh Eloquent
-
-        if ($params === 'year') {
-            $query->whereYear('tanggal', '=', (int) $date);
-        } elseif ($params === 'month') {
-            $query->whereRaw("DATE_FORMAT(tanggal, '%Y-%m') = ?", [$date]);
-        }
-
-        return $query->orderBy('tanggal', 'ASC');
+        return $this->uang_masuk > 0 ? $this->uang_masuk : $this->uang_keluar;
     }
 
-    public static function getUangKeluarByDateQuery($date, $params)
+    // Accessor untuk mendapatkan keterangan berdasarkan tipe
+    public function getKeteranganAttribute()
     {
-        $query = self::select('id', 'tanggal', 'keterangan_keluar AS keterangan', 'uang_keluar AS jumlah')
-            ->where('uang_keluar', '!=', 0);
-
-        if ($params === 'year') {
-            $query->whereYear('tanggal', '=', (int) $date);
-        } elseif ($params === 'month') {
-            $query->whereRaw("DATE_FORMAT(tanggal, '%Y-%m') = ?", [$date]);
-        }
-
-        return $query->orderBy('tanggal', 'ASC');
+        return $this->uang_masuk > 0 ? $this->keterangan_masuk : $this->keterangan_keluar;
     }
 
-    public static function getTotalByType($type, $date, $params)
+    // Scope untuk filter berdasarkan tipe
+    public function scopeType($query, $type)
     {
-        $column = ($type === 'masuk') ? 'uang_masuk' : 'uang_keluar';
-
-        $query = self::where($column, '!=', 0);
-
-        if ($params === 'year') {
-            $query->whereYear('tanggal', '=', (int) $date);
-        } elseif ($params === 'month') {
-            $query->whereRaw("DATE_FORMAT(tanggal, '%Y-%m') = ?", [$date]);
+        if ($type === 'masuk') {
+            return $query->where('uang_masuk', '>', 0);
+        } else {
+            return $query->where('uang_keluar', '>', 0);
         }
+    }
 
-        return $query->sum($column);
+    // Scope untuk filter berdasarkan periode
+    public function scopePeriod($query, $date, $params)
+    {
+        if ($params === 'year') {
+            return $query->whereYear('tanggal', $date);
+        } else {
+            return $query->whereRaw("DATE_FORMAT(tanggal, '%Y-%m') = ?", [$date]);
+        }
     }
 }

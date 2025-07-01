@@ -14,9 +14,8 @@ export class AbsensiService {
             const axiosConfig = { params }; // atau { params: flatParams } sesuai logika Anda
 
             // ↓↓↓ TAMBAHKAN LOG INI ↓↓↓
-            console.error('LAYER 3 (SERVICE): Axios akan dikirimkan objek ini:', axiosConfig);
 
-            const response = await apiClient.get(`${this.baseUrl}/weekly-report`, axiosConfig);
+            const response = await apiClient.get(`${AbsensiService.baseUrl}/weekly-report`, axiosConfig);
 
             return response.data;
         } catch (error) {
@@ -31,7 +30,7 @@ export class AbsensiService {
     }> {
         try {
             // Perhatikan params langsung flat
-            const response = await apiClient.get(`${this.baseUrl}/count`, {
+            const response = await apiClient.get(`${AbsensiService.baseUrl}/count`, {
                 params: { periode, mode }
             });
 
@@ -53,7 +52,9 @@ export class AbsensiService {
         bonus?: boolean;
     }>): Promise<any> {
         try {
-            const response = await apiClient.post(`${this.baseUrl}`, { data });
+
+            console.log('Creating absensi with data:', data);
+            const response = await apiClient.post(`${AbsensiService.baseUrl}`, { data });
 
             if (!response.data.success) {
                 throw new Error(response.data.message || 'Failed to create absensi');
@@ -66,13 +67,11 @@ export class AbsensiService {
         }
     }
 
-    static async getActiveSiswa(): Promise<Array<{
-        id: number;
-        nama: string;
-        alamat: string;
-    }>> {
+    static async getActiveSiswa(tanggal: string): Promise<Array<{ id: number; nama: string; alamat: string; }>> {
         try {
-            const response = await apiClient.get(`${this.baseUrl}/siswa-aktif`);
+            const response = await apiClient.get(`${AbsensiService.baseUrl}/siswa-aktif`, {
+                params: { tanggal }
+            });
 
             if (!response.data.success) {
                 throw new Error(response.data.message || 'Failed to fetch siswa');
@@ -87,13 +86,13 @@ export class AbsensiService {
 
     static async exportWeeklyReport(params: Omit<AbsensiWeeklyFilter, 'page' | 'limit'>): Promise<void> {
         try {
-            const response = await apiClient.get(`${this.baseUrl}/weekly-report/export`, {
+            const response = await apiClient.get(`${AbsensiService.baseUrl}/weekly-report/export`, {
                 params,
                 responseType: 'blob'
             });
 
             const blob = new Blob([response.data], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                type: 'text/csv;charset=utf-8'
             });
 
             const url = window.URL.createObjectURL(blob);
@@ -106,6 +105,19 @@ export class AbsensiService {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error exporting weekly report:', error);
+            throw error;
+        }
+    }
+
+    static async deleteAbsensi(id: number): Promise<void> {
+        try {
+            const response = await apiClient.delete(`${AbsensiService.baseUrl}/${id}`);
+
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Failed to delete absensi');
+            }
+        } catch (error) {
+            console.error('Error deleting absensi:', error);
             throw error;
         }
     }

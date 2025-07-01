@@ -1,35 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-
-// Simple replacement components for missing imports
-const CardDH = ({ jumlah_siswa_m, jumlah_siswa_s, isLoading }: { jumlah_siswa_m: number; jumlah_siswa_s: number; isLoading: boolean }) => (
-    <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 bg-green-50 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-800">Siswa Masuk</h3>
-            <p className="text-2xl font-bold text-green-900">{isLoading ? '...' : jumlah_siswa_m}</p>
-        </div>
-        <div className="p-4 bg-red-50 rounded-lg">
-            <h3 className="text-lg font-semibold text-red-800">Siswa Keluar</h3>
-            <p className="text-2xl font-bold text-red-900">{isLoading ? '...' : jumlah_siswa_s}</p>
-        </div>
-    </div>
-);
-
-const LoadingSpinner = () => (
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-);
-
-const ErrorMessage = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
-    <div className="text-center py-8">
-        <p className="text-red-600 mb-4">{message}</p>
-        <button onClick={onRetry} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-            Coba Lagi
-        </button>
-    </div>
-);
-
+import { AbsensiHadirMingguIni } from "@/components/absensi/AbsensiHadirMingguIni";
 import { CustomMonthPicker, CustomYearPicker } from '@/components/month-picker';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -54,6 +27,40 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Daftar Hadir', href: 'daftar-hadir' },
 ];
 
+// Simple replacement components for missing imports
+const CardDH = ({
+    jumlah_siswa_m,
+    jumlah_siswa_s,
+    isLoading
+}: { jumlah_siswa_m: number; jumlah_siswa_s: number; isLoading: boolean }) => (
+    <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
+            <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">Siswa Masuk</h3>
+            <p className="text-2xl font-bold text-green-900 dark:text-green-100">{isLoading ? '...' : jumlah_siswa_m}</p>
+        </div>
+        <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-lg">
+            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Siswa Keluar</h3>
+            <p className="text-2xl font-bold text-red-900 dark:text-red-100">{isLoading ? '...' : jumlah_siswa_s}</p>
+        </div>
+    </div>
+);
+
+const LoadingSpinner = () => (
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+);
+
+const ErrorMessage = ({
+    message,
+    onRetry
+}: { message: string; onRetry: () => void }) => (
+    <div className="text-center py-8">
+        <p className="text-red-600 mb-4">{message}</p>
+        <button onClick={onRetry} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            Coba Lagi
+        </button>
+    </div>
+);
+
 export default function DaftarHadir() {
     // State management
     const [filterMode, setFilterMode] = useState<'bulan' | 'tahun'>('bulan');
@@ -66,7 +73,6 @@ export default function DaftarHadir() {
             : year.toString();
     });
 
-
     const [searchValue, setSearchValue] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [showAddDialog, setShowAddDialog] = useState(false);
@@ -75,7 +81,7 @@ export default function DaftarHadir() {
     // Debounced search
     const debouncedSearch = useDebounce(searchValue, 500);
 
-    // Memoized filter params - fix parameter structure
+    // Memoized filter params
     const filterParams = useMemo(() => ({
         periode,
         mode: filterMode,
@@ -83,8 +89,6 @@ export default function DaftarHadir() {
         page: currentPage,
         limit: 20
     }), [periode, filterMode, debouncedSearch, currentPage]);
-
-    console.info('LAYER 1 (KOMPONEN): useMemo membuat objek ini:', filterParams);
 
     // Data fetching
     const {
@@ -104,11 +108,17 @@ export default function DaftarHadir() {
         data: siswaData,
         isLoading: siswaLoading,
         error: siswaError
-    } = useActiveSiswa();
+    } = useActiveSiswa(selectedDate);
 
     // Mutations
     const createAbsensi = useCreateAbsensi();
     const exportAbsensi = useExportAbsensi();
+
+    useEffect(() => {
+        if (createAbsensi.isSuccess) {
+            refetchWeekly();
+        }
+    }, [createAbsensi.isSuccess, refetchWeekly]);
 
 
     // Event handlers
@@ -159,7 +169,17 @@ export default function DaftarHadir() {
     }, [exportAbsensi, periode, filterMode, debouncedSearch]);
 
     // Memoized values
-    const tableData = useMemo(() => weeklyData?.data || [], [weeklyData]);
+    const tableData = useMemo(() =>
+        (weeklyData?.data || []).map((row) => {
+            const newRow: any = { ...row };
+            Object.keys(newRow).forEach((key) => {
+                if (typeof newRow[key] === 'boolean') {
+                    // Ubah false menjadi 'T', true menjadi 'H', atau string lain yang sesuai
+                    newRow[key] = newRow[key] ? 'H' : 'T';
+                }
+            });
+            return newRow;
+        }), [weeklyData]);
     const pagination = useMemo(() => weeklyData?.pagination, [weeklyData]);
     const attendanceCount = useMemo(() => countData || { masuk: 0, keluar: 0 }, [countData]);
 
@@ -181,15 +201,48 @@ export default function DaftarHadir() {
         }));
     }, [siswaData]);
 
+    const siswaSudahAbsenPadaTanggal = useMemo(() => {
+        if (!tableData || !selectedDate) return [];
+        return tableData
+            .filter(row => row[selectedDate] === 'H' || row[selectedDate] === 'B')
+            .map(row => row.siswa_id);
+    }, [tableData, selectedDate]);
+
+    // Filter siswaList untuk dialog
+    const siswaBisaDiabsen = useMemo(() => {
+        return activeSiswa.filter(siswa => !siswaSudahAbsenPadaTanggal.includes(siswa.id));
+    }, [activeSiswa, siswaSudahAbsenPadaTanggal]);
+
+
     // Loading states
     const isLoading = weeklyLoading || countLoading;
     const hasError = weeklyError || countError || siswaError;
+
+    // Fallback sundays if API doesn't provide it
+    const sundays = useMemo(() => {
+        if (weeklyData?.sundays && weeklyData.sundays.length > 0) return weeklyData.sundays;
+        if (tableData[0]) {
+            return Object.keys(tableData[0]).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k));
+        }
+        return [];
+    }, [weeklyData, tableData]);
+
+    const getPaginationRange = (currentPage: number, totalPages: number, windowSize = 5) => {
+        const half = Math.floor(windowSize / 2);
+        let start = Math.max(1, currentPage - half);
+        const end = Math.min(totalPages, start + windowSize - 1);
+
+        if (end - start < windowSize - 1) {
+            start = Math.max(1, end - windowSize + 1);
+        }
+        return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Daftar Hadir" />
 
-            <div className="space-y-6 p-6">
+            <div className="flex h-full flex-col justify-center gap-2 rounded-xl p-4 w-full overflow-auto overflow-x-auto mx-auto">
                 {/* Filter Controls */}
                 <div className="bg-card p-6 rounded-lg shadow-sm">
                     <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -217,27 +270,31 @@ export default function DaftarHadir() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <Input
-                                placeholder="Cari nama siswa..."
-                                value={searchValue}
-                                onChange={(e) => handleSearchChange(e.target.value)}
-                                className="w-64"
-                            />
-
-                            <Button
-                                variant="outline"
-                                onClick={handleExport}
-                                disabled={exportAbsensi.isPending || !!hasError}
-                            >
-                                {exportAbsensi.isPending ? 'Mengekspor...' : 'Export'}
-                            </Button>
-
-                            <Button
-                                onClick={() => setShowAddDialog(true)}
-                                disabled={siswaLoading || !!siswaError}
-                            >
-                                Tambah Data
-                            </Button>
+                            <div>
+                                <Input
+                                    placeholder="Cari nama siswa..."
+                                    value={searchValue}
+                                    onChange={(e) => handleSearchChange(e.target.value)}
+                                    className="w-64"
+                                />
+                            </div>
+                            <div>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleExport}
+                                    disabled={exportAbsensi.isPending || !!hasError}
+                                >
+                                    {exportAbsensi.isPending ? 'Mengekspor...' : 'Export'}
+                                </Button>
+                            </div>
+                            <div>
+                                <Button
+                                    onClick={() => setShowAddDialog(true)}
+                                    disabled={siswaLoading || !!siswaError}
+                                >
+                                    Tambah Data
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -258,7 +315,7 @@ export default function DaftarHadir() {
                 </div>
 
                 {/* Data Table */}
-                <div className="bg-card rounded-lg shadow-sm overflow-hidden">
+                <div className="flex-1 flex flex-col gap-4 rounded-xl">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-12">
                             <LoadingSpinner />
@@ -272,12 +329,22 @@ export default function DaftarHadir() {
                         </div>
                     ) : (
                         <>
-                            <AbsensiWeeklyTable
-                                data={tableData}
-                                sundays={weeklyData?.sundays || []}
-                                isLoading={false}
+                            <div className="relative flex-1 overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-bsorder">
+                                <AbsensiWeeklyTable
+                                    data={tableData}
+                                    sundays={sundays}
+                                    isLoading={false}
+                                />
+                            </div>
+                            <AbsensiHadirMingguIni
+                                startDate={sundays[0]}
+                                endDate={sundays[sundays.length - 1]}
+                                onEdit={absen => {
+                                    // Tampilkan dialog edit absensi, misal setEditAbsensi(absen)
+                                    // Atau tampilkan alert/console.log(absen) untuk sementara
+                                    alert(`Edit absensi: ${absen.nama} (${absen.tanggal})`);
+                                }}
                             />
-
                             {/* Pagination */}
                             {pagination && pagination.totalPages > 1 && (
                                 <div className="flex items-center justify-between p-4 border-t">
@@ -296,20 +363,17 @@ export default function DaftarHadir() {
                                         </Button>
 
                                         <div className="flex items-center gap-1">
-                                            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                                                const page = i + 1;
-                                                return (
-                                                    <Button
-                                                        key={page}
-                                                        variant={page === pagination.currentPage ? "default" : "outline"}
-                                                        size="sm"
-                                                        onClick={() => handlePageChange(page)}
-                                                        disabled={isLoading}
-                                                    >
-                                                        {page}
-                                                    </Button>
-                                                );
-                                            })}
+                                            {getPaginationRange(pagination.currentPage, pagination.totalPages, 5).map(page => (
+                                                <Button
+                                                    key={page}
+                                                    variant={page === pagination.currentPage ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => handlePageChange(page)}
+                                                    disabled={isLoading}
+                                                >
+                                                    {page}
+                                                </Button>
+                                            ))}
                                         </div>
 
                                         <Button
@@ -342,7 +406,7 @@ export default function DaftarHadir() {
                 <AbsensiInputDialog
                     open={showAddDialog}
                     onClose={() => setShowAddDialog(false)}
-                    siswaList={activeSiswa}
+                    siswaList={siswaBisaDiabsen}
                     tanggal={selectedDate}
                     setTanggal={setSelectedDate}
                     onSubmit={handleAddAbsensi}

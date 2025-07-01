@@ -66,6 +66,7 @@ class AbsensiController extends Controller
      */
     public function store(StoreAbsensiRequest $request): JsonResponse
     {
+        \Log::info('Creating absensi with data:', $request->all());
         try {
             $result = $this->absensiService->saveFromRequest($request);
 
@@ -120,10 +121,15 @@ class AbsensiController extends Controller
     /**
      * Get active siswa untuk form absensi
      */
-    public function getActiveSiswa(): JsonResponse
+    public function getActiveSiswa(Request $request): JsonResponse
     {
+        // Validasi tanggal
+        $validatedDate = \Illuminate\Support\Facades\Validator::make(
+            ['tanggal' => $request->input('tanggal')],
+            ['tanggal' => 'required|date_format:Y-m-d']
+        );
         try {
-            $siswa = $this->absensiService->getActiveSiswaForAbsensi();
+            $siswa = $this->absensiService->getActiveSiswaForAbsensi($validatedDate->validated()['tanggal']);
 
             return response()->json([
                 'success' => true,
@@ -172,5 +178,44 @@ class AbsensiController extends Controller
                 'message' => 'Gagal mengekspor data'
             ], 500);
         }
+    }
+
+    public function getSiswaHadirMingguIni(Request $request): JsonResponse
+    {
+        $start = $request->input('start_date');
+        $end = $request->input('end_date');
+
+        $data = \App\Models\Absensi::with('siswa:id,nama,alamat')
+            ->whereBetween('tanggal', [$start, $end])
+            ->get()
+            ->map(function ($absen) {
+                return [
+                    'id' => $absen->id,
+                    'nama' => $absen->siswa->nama ?? '-',
+                    'alamat' => $absen->siswa->alamat ?? '-',
+                    'tanggal' => $absen->tanggal,
+                    'keterangan' => $absen->keterangan,
+                    'bonus' => $absen->bonus,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        $absensi = \App\Models\Absensi::findOrFail($id);
+        $absensi->delete();
+
+        \Cache::tags(['absensi', 'report', 'stats'])->flush();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Absensi berhasil dihapus'
+        ]);
     }
 }
