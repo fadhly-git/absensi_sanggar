@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AbsensiController as AC;
 use App\Http\Controllers\KeuanganCon as KC;
+use App\Http\Controllers\SiswaCon as sc;
 use Inertia\Inertia;
 
 Route::redirect('/', '/absensi', 301);
@@ -16,6 +17,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         //export route definition
         Route::get('export-financial', [KC::class, 'exportFinancialReport'])->name('export-keuangan');
         Route::get('export-absen', [AC::class, 'exportExcel'])->name('export-absen');
+        Route::get('export-siswa', [sc::class, 'exportExcel'])->name('export-siswa');
 
         Route::get('dashboard', function () {
             return Inertia::render('dashboard');

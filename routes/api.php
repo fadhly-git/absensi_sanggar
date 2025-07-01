@@ -35,6 +35,7 @@ Route::group(['prefix' => 'atmin'], function () {
         Route::delete('delete/{id}', [sc::class,'delete']);
         Route::get('get-siswa-aktif',[sc::class, 'getCountSiswaAktif']);
         Route::get('get-count-all', [sc::class,'getCountSiswa']);
+        Route::get('export-excel', [sc::class, 'exportExcel']);
     });
 
     // keuangan api
