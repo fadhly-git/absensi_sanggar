@@ -24,10 +24,10 @@ export const CardSaldo = ({ data, isLoading }: { data?: DashboardSummary['saldo'
     const percentageChange = sebelumnya !== 0 ? ((terakhir - sebelumnya) / sebelumnya) * 100 : (terakhir > 0 ? 100 : 0);
     const isTrendingUp = terakhir >= sebelumnya;
     return (
-        <Card>
+        <Card className="@container/card">
             <CardHeader className="relative pb-2">
                 <CardDescription>Saldo Terakhir</CardDescription>
-                <CardTitle className="text-2xl font-semibold">{formatRupiah(terakhir)}</CardTitle>
+                <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{formatRupiah(terakhir)}</CardTitle>
                 <div className="absolute top-4 right-4">
                     <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
                         {isTrendingUp ? <TrendingUpIcon className="size-3 text-green-500" /> : <TrendingDownIcon className="size-3 text-red-500" />}
@@ -35,6 +35,12 @@ export const CardSaldo = ({ data, isLoading }: { data?: DashboardSummary['saldo'
                     </Badge>
                 </div>
             </CardHeader>
+            <CardFooter className="flex-col items-start gap-1 text-sm">
+                <div className="line-clamp-1 flex gap-2 font-medium">
+                    Saldo Saat ini {' '}
+                    {isTrendingUp ? <TrendingUpIcon className="size-4 text-green-500" /> : <TrendingDownIcon className="size-4 text-red-500" />}
+                </div>
+            </CardFooter>
         </Card>
     );
 };
@@ -76,7 +82,7 @@ export const SimpleStatCard = ({ title, value, icon, isLoading }: { title: strin
 // Komponen utama yang menata semua kartu, hanya untuk dashboard
 export function SectionCards({ summary, isLoading }: SectionCardsProps) {
     return (
-        <div className="grid gap-4 px-4 sm:grid-cols-2 lg:grid-cols-4 lg:px-6">
+        <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
             <CardSaldo data={summary?.saldo} isLoading={isLoading} />
             <CardSiswaBerangkat data={summary?.siswa_berangkat} isLoading={isLoading} />
             <SimpleStatCard

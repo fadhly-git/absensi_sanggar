@@ -19,7 +19,7 @@ export function KeuanganTabs() {
     const [uangKeluarFields, setUangKeluarFields] = useState([{ keterangan: '', amount: '', displayAmount: '' }]);
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    
+
     const queryClient = useQueryClient();
 
     const mutation = useMutation({
@@ -73,7 +73,7 @@ export function KeuanganTabs() {
             toast.error('Mohon isi semua field dan tanggal!');
             return;
         }
-        
+
         const payload: NewTransactionPayload = {
             type,
             tanggal: formattedDate,

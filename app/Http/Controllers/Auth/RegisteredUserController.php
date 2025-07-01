@@ -9,14 +9,16 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
+use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
     /**
-     * Show the registration page.
+     * Display the registration view.
      */
     public function create(): Response
     {
@@ -32,7 +34,7 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -46,6 +48,31 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return to_route('atmin.dashboard');
+        // Generate token untuk user baru (auto 2 jam untuk registrasi baru)
+        $expiresAt = now()->addHours(2);
+        $token = $user->createToken('api-token', ['*'], $expiresAt)->plainTextToken;
+
+        // Set session expiry (2 jam untuk registrasi baru)
+        $sessionLifetime = 2 * 60; // 2 jam dalam menit
+        $request->session()->put('session_expires_at', $expiresAt->toISOString());
+        $request->session()->put('is_remembered', false);
+        $request->session()->put('login_time', now()->toISOString());
+
+        Log::info("New user registered: {$user->id}", [
+            'expires_at' => $expiresAt->toISOString(),
+            'session_lifetime_minutes' => $sessionLifetime
+        ]);
+
+        return redirect()
+            ->route('atmin.dashboard')
+            ->withCookie(cookie(
+                'auth_token', 
+                $token, 
+                $sessionLifetime,
+                '/', 
+                null, 
+                false, 
+                false
+            ));
     }
 }

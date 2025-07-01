@@ -88,7 +88,7 @@ export function DataTableKeuangan({ datas, type, isLoading }: DataTableKeuanganP
 
     return (
         <>
-            {type === 'masuk' 
+            {type === 'masuk'
                 ? <KeuanganMskEditTabs open={isEditDialogOpen} openDialog={() => setIsEditDialogOpen(false)} data={selectedData} />
                 : <KeuanganKlrEditTabs open={isEditDialogOpen} openDialog={() => setIsEditDialogOpen(false)} data={selectedData} />
             }

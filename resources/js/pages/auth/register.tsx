@@ -114,6 +114,11 @@ export default function Register() {
                     </TextLink>
                 </div>
             </form>
+            <div className="mt-4 rounded-md bg-blue-50 p-3">
+                <div className="text-xs text-blue-700 text-center">
+                    <p>🔒 New accounts are automatically signed in for 2 hours</p>
+                </div>
+            </div>
         </AuthLayout>
     );
 }

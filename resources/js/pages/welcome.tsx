@@ -1,7 +1,8 @@
-import { Link, Head } from '@inertiajs/react';
+import { Link, Head, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookCheck, Users, Wallet } from 'lucide-react';
+import { SharedData } from '@/types';
 
 // Definisikan tipe props yang diterima dari Laravel
 interface WelcomeProps {
@@ -12,6 +13,7 @@ interface WelcomeProps {
 }
 
 export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
+    const { auth } = usePage<SharedData>().props;
     return (
         <>
             <Head title="Selamat Datang" />
@@ -22,8 +24,8 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
                         <Link href="/" className="flex items-center gap-2">
                             {/* Ganti dengan Logo Sanggar Anda jika ada */}
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-                                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-                                <path d="m9 12 2 2 4-4"/>
+                                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                                <path d="m9 12 2 2 4-4" />
                             </svg>
                             <span className="font-bold">Sanggar App</span>
                         </Link>
@@ -53,9 +55,15 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
                                 Kelola data siswa, absensi, dan keuangan sanggar Anda dengan mudah di satu tempat yang terpusat dan modern.
                             </p>
                             <div className="mt-8 flex justify-center gap-4">
-                                <Link href={route('login')}>
-                                    <Button size="lg">Mulai Kelola</Button>
-                                </Link>
+                                {auth.user ? (
+                                    <Link href={route('atmin.dashboard')}>
+                                        <Button size="lg">Dashboard</Button>
+                                    </Link>
+                                ) : (
+                                    <Link href={route('login')}>
+                                        <Button size="lg">Mulai Kelola</Button>
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     </section>

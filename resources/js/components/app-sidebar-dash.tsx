@@ -3,6 +3,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem as BreadcrumbItemType, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { ModeToggle } from './mode-toggle';
+import { SessionStatus } from '@/components/session-status';
 
 interface AppSidebarHeaderProps {
     breadcrumbs?: BreadcrumbItemType[];
@@ -20,7 +21,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: AppSidebarHeaderProps) {
                 <nav className="flex items-center justify-end gap-4">
                     {auth.user ? (
                         <>
-                        {/* {JSON.stringify(breadcrumbs[0].title)} */}
+                            <SessionStatus />
                         </>
                     ) : (
                         <>

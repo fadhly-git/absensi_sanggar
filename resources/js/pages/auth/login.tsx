@@ -31,15 +31,24 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        // Kirim permintaan login ke backend
+        // Kirim permintaan login ke backend dengan remember me
         post(route('login'), {
             onFinish: () => reset('password'),
         });
     };
 
     return (
-        <AuthLayout title="Log in to your account" description="Enter your email and password below to log in">
+        <AuthLayout
+            title="Log in to your account"
+            description="Enter your email and password below to log in"
+        >
             <Head title="Log in" />
+
+            {status && (
+                <div className="mb-4 rounded-md bg-green-50 p-4">
+                    <div className="text-center text-sm font-medium text-green-600">{status}</div>
+                </div>
+            )}
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">
@@ -55,6 +64,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
                             placeholder="email@example.com"
+                            disabled={processing}
                         />
                         <InputError message={errors.email} />
                     </div>
@@ -63,7 +73,11 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         <div className="flex items-center">
                             <Label htmlFor="password">Password</Label>
                             {canResetPassword && (
-                                <TextLink href={route('password.request')} className="ml-auto text-sm" tabIndex={5}>
+                                <TextLink
+                                    href={route('password.request')}
+                                    className="ml-auto text-sm"
+                                    tabIndex={5}
+                                >
                                     Forgot password?
                                 </TextLink>
                             )}
@@ -77,6 +91,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                             placeholder="Password"
+                            disabled={processing}
                         />
                         <InputError message={errors.password} />
                     </div>
@@ -88,8 +103,25 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             checked={data.remember}
                             onClick={() => setData('remember', !data.remember)}
                             tabIndex={3}
+                            disabled={processing}
                         />
-                        <Label htmlFor="remember">Remember me</Label>
+                        <Label htmlFor="remember" className="text-sm">
+                            Keep me signed in for 7 days
+                        </Label>
+                    </div>
+
+                    {/* Session duration info */}
+                    <div className="rounded-md bg-blue-50 p-3">
+                        <div className="text-xs text-blue-700 space-y-1">
+                            <div className="flex items-center justify-between">
+                                <span>🔒 Regular login:</span>
+                                <span className="font-medium">2 hours</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>🔒 Keep me signed in:</span>
+                                <span className="font-medium">7 days</span>
+                            </div>
+                        </div>
                     </div>
 
                     <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
@@ -98,8 +130,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </Button>
                 </div>
             </form>
-
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
         </AuthLayout>
     );
 }

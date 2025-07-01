@@ -15,7 +15,7 @@ import { type BreadcrumbItem } from '@/types';
 import { fetchSaldo, fetchTransactions } from '@/services/keuanganApi';
 
 // ======================================================================
-import { CardSaldo } from '@/components/section-card'; 
+import { CardSaldo } from '@/components/section-card';
 // ======================================================================
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -47,7 +47,7 @@ export default function Keuangan() {
             <Head title="Keuangan" />
             <div className="flex h-full flex-col gap-4 p-4">
                 {/* ... bagian filter ... */}
-                 <div className="mb-3 flex w-full justify-center">
+                <div className="mb-3 flex w-full justify-center">
                     <div className="flex flex-col items-center gap-4">
                         <div className='flex items-center gap-2'>
                             <div className="px-2 font-bold">Tahun</div>
@@ -66,12 +66,12 @@ export default function Keuangan() {
                         <KeuanganTabs />
                     </div>
                     {/* Gunakan CardSaldo yang sudah diimpor */}
-                    <CardSaldo 
-                        data={saldoData ? { terakhir: saldoData.saldo_terakhir, sebelumnya: saldoData.saldo_sebelumnya } : undefined} 
+                    <CardSaldo
+                        data={saldoData ? { terakhir: saldoData.saldo_terakhir, sebelumnya: saldoData.saldo_sebelumnya } : undefined}
                         isLoading={isSaldoLoading}
                     />
                 </div>
-                
+
                 {/* ... bagian tabel ... */}
                 <div className="grid auto-rows-min gap-4 md:grid-cols-2">
                     <div className="border rounded-xl">
