@@ -46,4 +46,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
         ];
     }
+
+    public function rotateToken() {
+        $this->tokens()->delete(); // Delete existing tokens
+        return $this->createToken('auth_token')->plainTextToken; // Generate new token
+    }
 }
