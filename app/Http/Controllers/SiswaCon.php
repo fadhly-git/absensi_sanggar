@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Siswa;
+use App\Exports\SiswaExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SiswaCon extends Controller
 {
@@ -72,5 +74,22 @@ class SiswaCon extends Controller
         ->first();
 
         return response()->json($result);
+    }
+
+    public function exportExcel()
+    {
+        // Get only active students (status = 1) using Laravel's proper soft delete
+        $activeSiswa = Siswa::where('status', 1)->get();
+
+        // Check if there are any active students
+        if ($activeSiswa->isEmpty()) {
+            return response()->json([
+                'message' => 'Tidak ada data siswa aktif untuk diekspor.'
+            ], 404);
+        }
+
+        $filename = 'siswa_aktif_' . date('Y-m-d') . '.xlsx';
+        
+        return Excel::download(new SiswaExport($activeSiswa), $filename);
     }
 }
