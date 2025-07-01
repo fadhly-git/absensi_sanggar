@@ -1,6 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 
-// Definisikan tipe data di sini untuk digunakan di seluruh aplikasi
+// Base URL konsisten dengan routes Laravel
+const BASE_URL = '/api/admin/keuangan';
+
+// Types
 export interface Saldo {
     saldo_terakhir: number;
     saldo_sebelumnya: number;
@@ -13,7 +17,6 @@ export interface DataKeuangan {
     jumlah: number;
 }
 
-// Tipe data untuk payload (data yang dikirim)
 export interface NewTransactionPayload {
     type: 'masuk' | 'keluar';
     tanggal: string;
@@ -26,12 +29,22 @@ export interface UpdateTransactionPayload {
     data: Array<{ amount: string; keterangan: string }>;
 }
 
-
-// --- FUNGSI-FUNGSI API ---
-
+// API Functions dengan proper response handling
 export const fetchSaldo = async (): Promise<Saldo> => {
-    const { data } = await axios.get('/api/atmin/keuangan/get-saldo');
-    return data;
+    try {
+        const { data } = await axios.get(`${BASE_URL}/saldo`);
+
+        // Handle ApiResponse structure
+        if (data.success && data.data) {
+            return data.data;
+        }
+
+        // Handle direct data structure
+        return data;
+    } catch (error) {
+        console.error('fetchSaldo error:', error);
+        throw error;
+    }
 };
 
 export const fetchTransactions = async (
@@ -39,26 +52,80 @@ export const fetchTransactions = async (
     date: string,
     params: 'year' | 'month'
 ): Promise<DataKeuangan[]> => {
+    // Validation for month format
     if (params === 'month') {
         const [year, month] = date.split('-');
-        if (!year || !month || month.length !== 2 || year.length !== 4) return [];
+        if (!year || !month || month.length !== 2 || year.length !== 4) {
+            return [];
+        }
     }
-    const { data } = await axios.get(`/api/atmin/keuangan/index`, { params: { type, date, params } });
-    return data;
+
+    try {
+        const { data } = await axios.get(BASE_URL, {
+            params: { type, date, params }
+        });
+
+        // Handle ApiResponse structure
+        if (data.success && Array.isArray(data.data)) {
+            return data.data;
+        }
+
+        // Handle direct array response
+        if (Array.isArray(data)) {
+            return data;
+        }
+
+        // Fallback if data is not array
+        console.warn('fetchTransactions: Expected array but got:', typeof data, data);
+        return [];
+    } catch (error) {
+        console.error('fetchTransactions error:', error);
+        return [];
+    }
 };
 
 export const createTransaction = async (payload: NewTransactionPayload) => {
-    const { data } = await axios.post('/api/atmin/keuangan/store', payload);
-    return data;
+    try {
+        console.log('API: Creating transaction with payload:', payload);
+
+        const { data } = await axios.post(BASE_URL, payload, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            }
+        });
+
+        console.log('API: Transaction created successfully:', data);
+        return data;
+    } catch (error: any) {
+        console.error('API: Transaction creation failed:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            payload
+        });
+
+        // Re-throw with better error structure
+        throw {
+            message: error.message,
+            response: error.response,
+            status: error.response?.status
+        };
+    }
 };
 
-// TAMBAHKAN FUNGSI INI
-export const updateTransaction = async ({ id, payload }: { id: number; payload: UpdateTransactionPayload }) => {
-    const { data } = await axios.put(`/api/atmin/keuangan/update/${id}`, payload);
+export const updateTransaction = async ({
+    id,
+    payload
+}: {
+    id: number;
+    payload: UpdateTransactionPayload
+}) => {
+    const { data } = await axios.put(`${BASE_URL}/${id}`, payload);
     return data;
 };
 
 export const deleteTransaction = async (id: number) => {
-    const { data } = await axios.delete(`/api/atmin/keuangan/destroy/${id}`);
+    const { data } = await axios.delete(`${BASE_URL}/${id}`);
     return data;
 };

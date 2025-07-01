@@ -1,13 +1,15 @@
+import React, { useState, useMemo, useCallback } from 'react';
 import {
-    ColumnDef, ColumnFiltersState, SortingState, VisibilityState,
-    flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable
+    ColumnDef, flexRender, getCoreRowModel,
+    getFilteredRowModel, getPaginationRowModel,
+    getSortedRowModel, useReactTable,
+    ColumnFiltersState, SortingState, VisibilityState
 } from '@tanstack/react-table';
-import { ArrowUpDown, ChevronDown, Edit, Trash2 } from 'lucide-react';
-import React, { useState } from 'react';
+import { ArrowUpDown, Edit, Trash2, Search } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,7 +17,18 @@ import { type DataKeuangan, deleteTransaction } from '@/services/keuanganApi';
 import { KeuanganMskEditTabs } from './form-edit';
 import { KeuanganKlrEditTabs } from './form-edit-klr';
 
-interface DataTableKeuanganProps {
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+} from '@/components/ui/alert-dialog';
+
+export interface DataTableKeuanganProps {
     datas: DataKeuangan[];
     type: 'masuk' | 'keluar';
     isLoading: boolean;
@@ -23,16 +36,38 @@ interface DataTableKeuanganProps {
 
 const formatNumber = (value: number) => {
     if (value == null) return 'Rp 0';
-    return 'Rp ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return 'Rp ' + value.toLocaleString('id-ID');
 };
 
-export function DataTableKeuangan({ datas, type, isLoading }: DataTableKeuanganProps) {
+// Loading skeleton component
+const TableSkeleton = React.memo(() => (
+    <>
+        {Array.from({ length: 5 }).map((_, i) => (
+            <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+            </TableRow>
+        ))}
+    </>
+));
+
+export const DataTableKeuangan = React.memo(({
+    datas,
+    type,
+    isLoading
+}: DataTableKeuanganProps) => {
     const queryClient = useQueryClient();
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [selectedData, setSelectedData] = useState<DataKeuangan | null>(null);
+
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
 
     const deleteMutation = useMutation({
         mutationFn: deleteTransaction,
@@ -41,37 +76,101 @@ export function DataTableKeuangan({ datas, type, isLoading }: DataTableKeuanganP
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['saldo'] });
         },
-        onError: (error) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onError: (error: any) => {
             toast.error(error.message || 'Gagal menghapus data.');
         },
     });
 
-    const handleDelete = (id: number) => {
-        if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-            deleteMutation.mutate(id);
-        }
-    };
+    // Ganti handleDelete agar buka dialog
+    const handleDelete = useCallback((id: number) => {
+        setDeleteId(id);
+        setIsDeleteDialogOpen(true);
+    }, []);
 
-    const handleEdit = (data: DataKeuangan) => {
+    // Handler konfirmasi hapus
+    const confirmDelete = useCallback(() => {
+        if (deleteId !== null) {
+            deleteMutation.mutate(deleteId);
+            setIsDeleteDialogOpen(false);
+            setDeleteId(null);
+        }
+    }, [deleteId, deleteMutation]);
+
+    const handleEdit = useCallback((data: DataKeuangan) => {
         setSelectedData(data);
         setIsEditDialogOpen(true);
-    };
+    }, []);
 
-    const columns: ColumnDef<DataKeuangan>[] = [
-        { accessorKey: 'tanggal', header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>Tanggal <ArrowUpDown className="ml-2 h-4 w-4" /></Button> },
-        { accessorKey: 'keterangan', header: 'Keterangan' },
-        { accessorKey: 'jumlah', header: () => <div className="text-right">Jumlah</div>, cell: ({ row }) => <div className="text-right font-medium">{formatNumber(row.getValue('jumlah'))}</div> },
+    const closeEditDialog = useCallback(() => {
+        setIsEditDialogOpen(false);
+        setSelectedData(null);
+    }, []);
+
+    const columns: ColumnDef<DataKeuangan>[] = useMemo(() => [
+        {
+            accessorKey: 'tanggal',
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                    className="hover:bg-gray-100"
+                >
+                    Tanggal
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => (
+                <div className="font-medium">
+                    {new Date(row.getValue('tanggal')).toLocaleDateString('id-ID')}
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'keterangan',
+            header: 'Keterangan',
+            cell: ({ row }) => (
+                <div className="max-w-[200px] truncate" title={row.getValue('keterangan')}>
+                    {row.getValue('keterangan')}
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'jumlah',
+            header: () => <div className="text-right">Jumlah</div>,
+            cell: ({ row }) => (
+                <div className={`text-right font-semibold ${type === 'masuk' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                    {formatNumber(row.getValue('jumlah'))}
+                </div>
+            ),
+        },
         {
             id: 'actions',
             header: () => <div className="text-center">Aksi</div>,
             cell: ({ row }) => (
-                <div className="text-center space-x-2">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEdit(row.original)}><Edit className="h-4 w-4" /></Button>
-                    <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDelete(row.original.id)} disabled={deleteMutation.isPending && deleteMutation.variables === row.original.id}><Trash2 className="h-4 w-4" /></Button>
+                <div className="flex justify-center gap-1">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(row.original)}
+                        className="h-8 w-8 p-0 hover:bg-blue-50"
+                    >
+                        <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(row.original.id)}
+                        disabled={deleteMutation.isPending}
+                        className="h-8 w-8 p-0"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
                 </div>
             ),
         },
-    ];
+    ], [type, handleEdit, handleDelete, deleteMutation.isPending]);
 
     const table = useReactTable({
         data: datas,
@@ -84,38 +183,148 @@ export function DataTableKeuangan({ datas, type, isLoading }: DataTableKeuanganP
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
+        initialState: { pagination: { pageSize: 10 } },
     });
 
+    const totalAmount = useMemo(() =>
+        datas.reduce((sum, item) => sum + item.jumlah, 0),
+        [datas]
+    );
+
+    console.log('Rendering DataTableKeuangan', { type, totalAmount, isLoading });
+
     return (
-        <>
-            {type === 'masuk'
-                ? <KeuanganMskEditTabs open={isEditDialogOpen} openDialog={() => setIsEditDialogOpen(false)} data={selectedData} />
-                : <KeuanganKlrEditTabs open={isEditDialogOpen} openDialog={() => setIsEditDialogOpen(false)} data={selectedData} />
-            }
-            <div className="mx-2 w-auto items-center justify-center lg:mx-4">
-                <div className="w-fit"><h1 className="mt-6 text-xl font-bold capitalize">Tabel Keuangan {type}</h1></div>
-                <div className="mx-2 flex items-center gap-2 py-4">
-                    <Input placeholder="Filter keterangan..." value={(table.getColumn('keterangan')?.getFilterValue() as string) ?? ''} onChange={(event) => table.getColumn('keterangan')?.setFilterValue(event.target.value)} className="max-w-sm" />
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="outline" className="ml-auto">Columns <ChevronDown className="ml-2 h-4 w-4" /></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            {table.getAllColumns().filter(column => column.getCanHide()).map(column => (<DropdownMenuCheckboxItem key={column.id} className="capitalize" checked={column.getIsVisible()} onCheckedChange={(value) => column.toggleVisibility(!!value)}>{column.id}</DropdownMenuCheckboxItem>))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+        <div className="space-y-4">
+            {/* AlertDialog Konfirmasi Hapus */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Data?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+                            Batal
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            disabled={deleteMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Hapus
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            {/* Edit Dialogs */}
+            {type === 'masuk' ? (
+                <KeuanganMskEditTabs
+                    open={isEditDialogOpen}
+                    openDialog={closeEditDialog}
+                    data={selectedData}
+                />
+            ) : (
+                <KeuanganKlrEditTabs
+                    open={isEditDialogOpen}
+                    openDialog={closeEditDialog}
+                    data={selectedData}
+                />
+            )}
+
+            {/* Filter & Summary */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                        placeholder="Cari keterangan..."
+                        value={(table.getColumn('keterangan')?.getFilterValue() as string) ?? ''}
+                        onChange={(event) =>
+                            table.getColumn('keterangan')?.setFilterValue(event.target.value)
+                        }
+                        className="pl-10 max-w-sm"
+                    />
                 </div>
-                <div className="rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            {table.getHeaderGroups().map(headerGroup => (<TableRow key={headerGroup.id}>{headerGroup.headers.map(header => (<TableHead key={header.id}>{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}</TableHead>))}</TableRow>))}
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? Array.from({ length: 5 }).map((_, i) => <TableRow key={i}><TableCell colSpan={columns.length}><Skeleton className="h-8 w-full" /></TableCell></TableRow>) :
-                                (table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (<TableRow key={row.id}>{row.getVisibleCells().map(cell => (<TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>))}</TableRow>)) :
-                                    <TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Tidak ada hasil.</TableCell></TableRow>)}
-                        </TableBody>
-                    </Table>
+                <div className={`text-sm font-semibold px-3 py-1 rounded-full ${type === 'masuk'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                    }`}>
+                    Total: {formatNumber(totalAmount)}
                 </div>
             </div>
-        </>
+
+            {/* Table */}
+            <div className="rounded-md border bg-white">
+                <Table>
+                    <TableHeader>
+                        {table.getHeaderGroups().map(headerGroup => (
+                            <TableRow key={headerGroup.id} className="bg-gray-50">
+                                {headerGroup.headers.map(header => (
+                                    <TableHead key={header.id}>
+                                        {header.isPlaceholder
+                                            ? null
+                                            : flexRender(header.column.columnDef.header, header.getContext())
+                                        }
+                                    </TableHead>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableSkeleton />
+                        ) : table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map(row => (
+                                <TableRow
+                                    key={row.id}
+                                    className="hover:bg-gray-50 transition-colors"
+                                >
+                                    {row.getVisibleCells().map(cell => (
+                                        <TableCell key={cell.id}>
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length}
+                                    className="h-24 text-center text-gray-500"
+                                >
+                                    Tidak ada data {type}
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                    Menampilkan {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} - {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} dari {table.getFilteredRowModel().rows.length} data
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                    >
+                        Sebelumnya
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                    >
+                        Selanjutnya
+                    </Button>
+                </div>
+            </div>
+        </div>
     );
-}
+});

@@ -18,49 +18,49 @@ class ValidateSession
     {
         // Check both web and sanctum guards
         $isAuthenticated = Auth::check() || Auth::guard('web')->check() || Auth::guard('sanctum')->check();
-        
+
         if ($isAuthenticated) {
             $user = Auth::user() ?? Auth::guard('web')->user() ?? Auth::guard('sanctum')->user();
-            
+
             if ($user) {
                 $expiresAt = $request->session()->get('session_expires_at');
-                
+
                 // If no expiry set, create default
                 if (!$expiresAt) {
                     $isRemembered = $request->session()->get('is_remembered', false);
-                    $expiresAt = $isRemembered ? 
-                        now()->addDays(7)->toISOString() : 
+                    $expiresAt = $isRemembered ?
+                        now()->addDays(7)->toISOString() :
                         now()->addHours(2)->toISOString();
-                    
+
                     $request->session()->put('session_expires_at', $expiresAt);
                     $request->session()->put('login_time', now()->toISOString());
-                    
-                    Log::info("Session expiry set for user: {$user->id}", [
-                        'expires_at' => $expiresAt,
-                        'is_remembered' => $isRemembered
-                    ]);
+
+                    // Log::info("Session expiry set for user: {$user->id}", [
+                    //     'expires_at' => $expiresAt,
+                    //     'is_remembered' => $isRemembered
+                    // ]);
                 }
-                
+
                 try {
                     if ($expiresAt && now()->greaterThan(Carbon::parse($expiresAt))) {
                         $isRemembered = $request->session()->get('is_remembered', false);
                         $sessionType = $isRemembered ? '7 days' : '2 hours';
-                        
-                        Log::info("Session expired for user: {$user->id} (Type: {$sessionType})");
-                        
+
+                        // Log::info("Session expired for user: {$user->id} (Type: {$sessionType})");
+
                         // Session expired, logout user
                         $user->tokens()->delete();
                         Auth::logout();
                         Auth::guard('web')->logout();
                         Auth::guard('sanctum')->logout();
-                        
+
                         $request->session()->invalidate();
                         $request->session()->regenerateToken();
-                        
+
                         if ($request->expectsJson()) {
                             return response()->json(['message' => 'Session expired'], 401);
                         }
-                        
+
                         return redirect('/login')->with('status', 'Session expired. Please login again.');
                     }
                 } catch (\Exception $e) {

@@ -70,11 +70,11 @@ class SiswaController extends Controller
 
             DB::commit();
 
-            Log::info('Siswa data imported', [
-                'user_id' => auth()->id(),
-                'success_count' => $import->getSuccessCount(),
-                'failed_count' => $import->getFailedCount()
-            ]);
+            // Log::info('Siswa data imported', [
+            //     'user_id' => auth()->id(),
+            //     'success_count' => $import->getSuccessCount(),
+            //     'failed_count' => $import->getFailedCount()
+            // ]);
 
             return response()->json([
                 'message' => 'Data berhasil diimpor',
@@ -181,21 +181,21 @@ class SiswaController extends Controller
                 return $item;
             });
 
-            Log::info('Siswa data fetched', [
-                'user_id' => auth()->id(),
-                'filters' => $request->only(['search', 'status', 'sortBy', 'sortOrder']),
-                'total' => $siswa->total(),
-                'per_page' => $perPage
-            ]);
+            // Log::info('Siswa data fetched', [
+            //     'user_id' => auth()->id(),
+            //     'filters' => $request->only(['search', 'status', 'sortBy', 'sortOrder']),
+            //     'total' => $siswa->total(),
+            //     'per_page' => $perPage
+            // ]);
 
             return response()->json($siswa);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching siswa data', [
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            // Log::error('Error fetching siswa data', [
+            //     'user_id' => auth()->id(),
+            //     'error' => $e->getMessage(),
+            //     'trace' => $e->getTraceAsString()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal mengambil data siswa',
@@ -228,11 +228,11 @@ class SiswaController extends Controller
             return response()->json($siswa);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching siswa detail', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id,
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error fetching siswa detail', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $id,
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Siswa tidak ditemukan'
@@ -275,11 +275,11 @@ class SiswaController extends Controller
 
             DB::commit();
 
-            Log::info('New siswa created', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $siswa->id,
-                'siswa_data' => $siswa->toArray()
-            ]);
+            // Log::info('New siswa created', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $siswa->id,
+            //     'siswa_data' => $siswa->toArray()
+            // ]);
 
             return response()->json([
                 'message' => 'Siswa berhasil ditambahkan',
@@ -289,11 +289,11 @@ class SiswaController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error creating siswa', [
-                'user_id' => auth()->id(),
-                'request_data' => $request->all(),
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error creating siswa', [
+            //     'user_id' => auth()->id(),
+            //     'request_data' => $request->all(),
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal menambahkan siswa',
@@ -330,12 +330,12 @@ class SiswaController extends Controller
 
             DB::commit();
 
-            Log::info('Siswa updated', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id,
-                'old_data' => $oldData,
-                'new_data' => $siswa->fresh()->toArray()
-            ]);
+            // Log::info('Siswa updated', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $id,
+            //     'old_data' => $oldData,
+            //     'new_data' => $siswa->fresh()->toArray()
+            // ]);
 
             return response()->json([
                 'message' => 'Siswa berhasil diperbarui',
@@ -345,12 +345,12 @@ class SiswaController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error updating siswa', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id,
-                'request_data' => $request->all(),
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error updating siswa', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $id,
+            //     'request_data' => $request->all(),
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal memperbarui siswa',
@@ -374,11 +374,11 @@ class SiswaController extends Controller
 
             DB::commit();
 
-            Log::info('Siswa soft deleted', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id,
-                'siswa_data' => $siswa->toArray()
-            ]);
+            // Log::info('Siswa soft deleted', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $id,
+            //     'siswa_data' => $siswa->toArray()
+            // ]);
 
             return response()->json([
                 'message' => 'Siswa berhasil dihapus'
@@ -387,11 +387,11 @@ class SiswaController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error deleting siswa', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id,
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error deleting siswa', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $id,
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal menghapus siswa',
@@ -420,10 +420,10 @@ class SiswaController extends Controller
 
             DB::commit();
 
-            Log::info('Siswa restored', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id
-            ]);
+            // Log::info('Siswa restored', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $id
+            // ]);
 
             return response()->json([
                 'message' => 'Siswa berhasil dipulihkan',
@@ -433,11 +433,11 @@ class SiswaController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error restoring siswa', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id,
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error restoring siswa', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $id,
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal memulihkan siswa',
@@ -495,12 +495,12 @@ class SiswaController extends Controller
 
             DB::commit();
 
-            Log::info('Bulk action performed on siswa', [
-                'user_id' => auth()->id(),
-                'action' => $action,
-                'ids' => $ids,
-                'affected_count' => $affectedCount
-            ]);
+            // Log::info('Bulk action performed on siswa', [
+            //     'user_id' => auth()->id(),
+            //     'action' => $action,
+            //     'ids' => $ids,
+            //     'affected_count' => $affectedCount
+            // ]);
 
             return response()->json([
                 'message' => $message,
@@ -510,12 +510,12 @@ class SiswaController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error performing bulk action', [
-                'user_id' => auth()->id(),
-                'action' => $request->action,
-                'ids' => $request->ids,
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error performing bulk action', [
+            //     'user_id' => auth()->id(),
+            //     'action' => $request->action,
+            //     'ids' => $request->ids,
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal melakukan operasi bulk',
@@ -537,10 +537,10 @@ class SiswaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error getting siswa count', [
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error getting siswa count', [
+            //     'user_id' => auth()->id(),
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal mengambil jumlah siswa',
@@ -562,10 +562,10 @@ class SiswaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error getting active siswa count', [
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error getting active siswa count', [
+            //     'user_id' => auth()->id(),
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal mengambil jumlah siswa aktif',
@@ -597,10 +597,10 @@ class SiswaController extends Controller
             return response()->json($siswa);
 
         } catch (\Exception $e) {
-            Log::error('Error getting trashed siswa', [
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error getting trashed siswa', [
+            //     'user_id' => auth()->id(),
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal mengambil data siswa yang dihapus',
@@ -632,10 +632,10 @@ class SiswaController extends Controller
 
             DB::commit();
 
-            Log::info('Siswa force deleted', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id
-            ]);
+            // Log::info('Siswa force deleted', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $id
+            // ]);
 
             return response()->json([
                 'message' => 'Siswa berhasil dihapus permanen'
@@ -644,11 +644,11 @@ class SiswaController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error force deleting siswa', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id,
-                'error' => $e->getMessage()
-            ]);
+            // Log::error('Error force deleting siswa', [
+            //     'user_id' => auth()->id(),
+            //     'siswa_id' => $id,
+            //     'error' => $e->getMessage()
+            // ]);
 
             return response()->json([
                 'message' => 'Gagal menghapus permanen siswa',
