@@ -4,41 +4,84 @@ namespace App\Services;
 
 use App\Http\Requests\StoreAbsensiRequest;
 use App\Models\Absensi;
+use App\Models\Siswa;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AbsensiService
 {
     /**
-     * Menyimpan data absensi dari request.
-     * Logika ini dipindahkan dari controller.
-     *
-     * @param StoreAbsensiRequest $request
-     * @return void
+     * Bulk save absensi dengan optimasi
      */
-    public function saveFromRequest(StoreAbsensiRequest $request): void
+    public function saveFromRequest(StoreAbsensiRequest $request): array
     {
-        // Di sini kita asumsikan StoreAbsensiRequest sudah melakukan semua validasi
-        // dan persiapan data yang diperlukan, seperti yang terlihat pada kode controller Anda.
-        
-        // Kode Anda menggunakan method `getAbsensiDataForInsert()` pada request,
-        // kita akan teruskan pola itu. Pastikan method itu ada di StoreAbsensiRequest.
-        // Jika tidak ada, kita bisa gunakan $request->validated()['data']
         $dataToInsert = $request->getAbsensiDataForInsert();
 
         if (empty($dataToInsert)) {
-            // Sebaiknya throw exception agar bisa ditangkap di controller
             throw new \InvalidArgumentException('Tidak ada data untuk disimpan.');
         }
 
-        // Gunakan transaksi untuk memastikan semua data berhasil disimpan atau tidak sama sekali.
-        DB::transaction(function () use ($dataToInsert) {
-            // Hapus data lama pada tanggal yang sama untuk menghindari duplikat
-            // (Ini adalah praktik yang baik jika form absensi bersifat 'timpa')
+        return DB::transaction(function () use ($dataToInsert) {
             $tanggal = $dataToInsert[0]['tanggal'];
-            Absensi::where('tanggal', $tanggal)->delete();
+            $siswaIds = collect($dataToInsert)->pluck('id_siswa')->toArray();
 
-            // Lakukan bulk insert untuk performa maksimal
-            Absensi::insert($dataToInsert);
+            // Cek siswa yang sudah absen di tanggal ini
+            $sudahAbsenIds = Absensi::where('tanggal', $tanggal)
+                ->whereIn('id_siswa', $siswaIds)
+                ->pluck('id_siswa')
+                ->toArray();
+
+            if (!empty($sudahAbsenIds)) {
+                // Bisa throw error atau skip siswa yang sudah absen
+                throw new \Exception('Beberapa siswa sudah absen di tanggal ini: ' . implode(', ', $sudahAbsenIds));
+                // Atau: $dataToInsert = array_filter($dataToInsert, fn($d) => !in_array($d['id_siswa'], $sudahAbsenIds));
+            }
+
+            // Hapus data lama hanya untuk siswa yang akan diupdate
+            Absensi::where('tanggal', $tanggal)
+                ->whereIn('id_siswa', $siswaIds)
+                ->delete();
+
+            // Bulk insert dengan chunk untuk performa
+            $chunks = array_chunk($dataToInsert, 100);
+            $totalInserted = 0;
+
+            foreach ($chunks as $chunk) {
+                Absensi::insert($chunk);
+                $totalInserted += count($chunk);
+            }
+
+            Log::info('sUCCES' . $totalInserted . '' . $tanggal);
+
+            Cache::tags(['absensi', 'report', 'stats'])->flush();
+
+            return [
+                'total_inserted' => $totalInserted,
+                'tanggal' => $tanggal
+            ];
         });
+    }
+
+    /**
+     * Get siswa list yang efisien
+     */
+    public function getActiveSiswaForAbsensi(string $tanggal): array
+    {
+        return Siswa::select(['id', 'nama', 'alamat'])
+            ->where('status', 1)
+            ->whereNull('deleted_at')
+            ->whereDoesntHave('absensis', function ($q) use ($tanggal) {
+                $q->where('tanggal', $tanggal);
+            })
+            ->orderBy('nama')
+            ->get()
+            ->toArray();
+    }
+
+    public function deleteAbsensi($id)
+    {
+        Absensi::findOrFail($id)->delete();
+        Cache::tags(['absensi', 'report', 'stats'])->flush();
     }
 }

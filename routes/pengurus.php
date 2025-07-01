@@ -1,7 +1,7 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AbsensiController as AC;
-use App\Http\Controllers\KeuanganCon as KC;
+use App\Http\Controllers\KeuanganController as KC;
 use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified'])->group(function () {

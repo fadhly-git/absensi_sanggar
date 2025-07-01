@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
@@ -167,13 +168,13 @@ export function useAuth(): UseAuthReturn {
             const diff = expiry.getTime() - now.getTime();
 
             if (diff <= 0) return 'expired';
-            
+
             // Warning jika tersisa kurang dari 30 menit untuk session reguler (2 jam)
             // atau kurang dari 1 hari untuk remember me (7 hari)
             const warningThreshold = isRemembered ? 24 * 60 * 60 * 1000 : 30 * 60 * 1000;
-            
+
             if (diff <= warningThreshold) return 'warning';
-            
+
             return 'active';
         } catch (error) {
             console.error('Error determining session status:', error);

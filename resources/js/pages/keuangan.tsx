@@ -1,87 +1,267 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 
-// Impor komponen UI
 import { CustomMonthPicker, CustomYearPicker } from '@/components/month-picker';
-import { DataTableKeuangan } from '@/components/keuangan/data-table';
+import { DataTableKeuangan, DataTableKeuanganProps } from '@/components/keuangan/data-table';
 import { KeuanganTabs } from '@/components/keuangan/form-keuangan';
 import { ExportButtonFinancial } from '@/components/keuangan/export-data';
 import { Switch } from '@/components/ui/switch';
+import { CardSaldo } from '@/components/section-card';
+import { Button } from '@/components/ui/button';
 import { type BreadcrumbItem } from '@/types';
 
-// Impor fungsi API
 import { fetchSaldo, fetchTransactions } from '@/services/keuanganApi';
 
-// ======================================================================
-import { CardSaldo } from '@/components/section-card';
-// ======================================================================
-
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Keuangan', href: route('keuangan.index') },
+    { title: 'Keuangan', href: route('atmin.keuangan') },
 ];
 
-export default function Keuangan() {
-    const [isMonthView, setIsMonthView] = useState(false);
-    const [date, setDate] = useState(new Date().getFullYear().toString());
-    const params = isMonthView ? 'month' : 'year';
+type FilterState = {
+    mode: 'year' | 'month';
+    date: string;
+};
 
-    const { data: saldoData, isLoading: isSaldoLoading } = useQuery({
+export default function Keuangan() {
+    const [filter, setFilter] = useState<FilterState>(() => {
+        const year = new Date().getFullYear().toString();
+        return { mode: 'year', date: year };
+    });
+
+    const isMonthMode = filter.mode === 'month';
+
+    // --- Queries with proper error handling
+    const saldoQuery = useQuery({
         queryKey: ['saldo'],
         queryFn: fetchSaldo,
+        staleTime: 5 * 60 * 1000,
+        retry: 2,
+        retryDelay: 1000
     });
 
-    const { data: uangMasuk, isLoading: isMasukLoading } = useQuery({
-        queryKey: ['transactions', 'masuk', date, params],
-        queryFn: () => fetchTransactions('masuk', date, params),
+    const uangMasukQuery = useQuery({
+        queryKey: ['transactions', 'masuk', filter.date, filter.mode],
+        queryFn: () => fetchTransactions('masuk', filter.date, filter.mode),
+        staleTime: 2 * 60 * 1000,
+        placeholderData: keepPreviousData,
+        retry: 2,
+        retryDelay: 1000
     });
 
-    const { data: uangKeluar, isLoading: isKeluarLoading } = useQuery({
-        queryKey: ['transactions', 'keluar', date, params],
-        queryFn: () => fetchTransactions('keluar', date, params),
+    const uangKeluarQuery = useQuery({
+        queryKey: ['transactions', 'keluar', filter.date, filter.mode],
+        queryFn: () => fetchTransactions('keluar', filter.date, filter.mode),
+        staleTime: 2 * 60 * 1000,
+        placeholderData: keepPreviousData,
+        retry: 2,
+        retryDelay: 1000
     });
+
+    // Memoized data dengan validasi array
+    const saldoData = useMemo(
+        () =>
+            saldoQuery.data
+                ? {
+                    terakhir: saldoQuery.data.saldo_terakhir || 0,
+                    sebelumnya: saldoQuery.data.saldo_sebelumnya || 0
+                }
+                : undefined,
+        [saldoQuery.data]
+    );
+
+    const uangMasukData = useMemo(() => {
+        const data = uangMasukQuery.data;
+        return Array.isArray(data) ? data : [];
+    }, [uangMasukQuery.data]);
+
+    const uangKeluarData = useMemo(() => {
+        const data = uangKeluarQuery.data;
+        return Array.isArray(data) ? data : [];
+    }, [uangKeluarQuery.data]);
+
+    // --- Handlers with useCallback for performance
+    const handleModeChange = useCallback((checked: boolean) => {
+        const mode = checked ? 'month' : 'year';
+        const now = new Date();
+        setFilter({
+            mode,
+            date: mode === 'month'
+                ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+                : now.getFullYear().toString()
+        });
+    }, []);
+
+    const handleDateChange = useCallback((val: string) => {
+        setFilter(f => ({ ...f, date: val }));
+    }, []);
+
+    const handleRetry = useCallback(() => {
+        saldoQuery.refetch();
+        uangMasukQuery.refetch();
+        uangKeluarQuery.refetch();
+    }, [saldoQuery, uangMasukQuery, uangKeluarQuery]);
+
+    // Error handling - hanya jika semua query error
+    const hasGlobalError = (saldoQuery.error && uangMasukQuery.error && uangKeluarQuery.error);
+
+    if (hasGlobalError) {
+        return (
+            <AppLayout breadcrumbs={breadcrumbs}>
+                <Head title="Keuangan" />
+                <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                    <div className="text-red-500 text-lg font-semibold">
+                        Terjadi kesalahan saat memuat data
+                    </div>
+                    <div className="text-sm text-gray-600 text-center max-w-md">
+                        {saldoQuery.error?.message || uangMasukQuery.error?.message || uangKeluarQuery.error?.message}
+                    </div>
+                    <div className="flex gap-2">
+                        <Button onClick={handleRetry} variant="outline">
+                            Coba Lagi
+                        </Button>
+                        <Button
+                            onClick={() => window.location.reload()}
+                            className="bg-primary hover:bg-primary/90"
+                        >
+                            Muat Ulang Halaman
+                        </Button>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Keuangan" />
-            <div className="flex h-full flex-col gap-4 p-4">
-                {/* ... bagian filter ... */}
-                <div className="mb-3 flex w-full justify-center">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className='flex items-center gap-2'>
-                            <div className="px-2 font-bold">Tahun</div>
-                            <Switch checked={isMonthView} onCheckedChange={setIsMonthView} />
-                            <div className="px-2 font-bold">Bulan</div>
-                        </div>
-                        <div>
-                            {isMonthView ? <CustomMonthPicker onMonthChange={setDate} /> : <CustomYearPicker onYearChange={setDate} />}
-                        </div>
-                    </div>
-                </div>
+            <div className="flex flex-col gap-4 p-4">
+                {/* Filter */}
+                <FilterBar
+                    isMonthMode={isMonthMode}
+                    filter={filter}
+                    onModeChange={handleModeChange}
+                    onDateChange={handleDateChange}
+                />
 
-                <div className="border rounded-xl p-4">
-                    <div className="flex justify-end gap-2">
-                        <ExportButtonFinancial date={date} param={params} />
+                {/* Saldo & Action */}
+                <div className="border rounded-xl p-4 bg-white shadow-sm flex flex-col gap-2">
+                    <div className="flex flex-wrap justify-end gap-2 mb-2">
+                        <ExportButtonFinancial date={filter.date} param={filter.mode} />
                         <KeuanganTabs />
                     </div>
-                    {/* Gunakan CardSaldo yang sudah diimpor */}
                     <CardSaldo
-                        data={saldoData ? { terakhir: saldoData.saldo_terakhir, sebelumnya: saldoData.saldo_sebelumnya } : undefined}
-                        isLoading={isSaldoLoading}
+                        data={saldoData}
+                        isLoading={saldoQuery.isLoading}
                     />
                 </div>
 
-                {/* ... bagian tabel ... */}
-                <div className="grid auto-rows-min gap-4 md:grid-cols-2">
-                    <div className="border rounded-xl">
-                        <DataTableKeuangan datas={uangMasuk ?? []} type="masuk" isLoading={isMasukLoading} />
-                    </div>
-                    <div className="border rounded-xl">
-                        <DataTableKeuangan datas={uangKeluar ?? []} type="keluar" isLoading={isKeluarLoading} />
-                    </div>
+                {/* Data Table */}
+                <div className="grid gap-4 md:grid-cols-2">
+                    <KeuanganTableWrapper
+                        title="💰 Uang Masuk"
+                        type="masuk"
+                        data={uangMasukData}
+                        isLoading={uangMasukQuery.isLoading}
+                        error={uangMasukQuery.error}
+                    />
+                    <KeuanganTableWrapper
+                        title="💸 Uang Keluar"
+                        type="keluar"
+                        data={uangKeluarData}
+                        isLoading={uangKeluarQuery.isLoading}
+                        error={uangKeluarQuery.error}
+                    />
                 </div>
             </div>
         </AppLayout>
     );
 }
+
+// --- Filter Bar with React.memo for performance
+const FilterBar = React.memo(({ isMonthMode, onModeChange, onDateChange }: {
+    isMonthMode: boolean;
+    filter: FilterState;
+    onModeChange: (checked: boolean) => void;
+    onDateChange: (val: string) => void;
+}) => {
+    return (
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 w-full bg-white/80 backdrop-blur px-4 pt-4 pb-2 mb-2 rounded-b-lg shadow-sm sticky top-0 z-40">
+            <div className="flex flex-wrap items-center gap-3">
+                <span className="font-bold text-lg text-primary">Ringkasan Keuangan</span>
+                <span className="text-muted-foreground">|</span>
+                <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">Tahun</span>
+                    <Switch checked={isMonthMode} onCheckedChange={onModeChange} />
+                    <span className="font-medium text-sm">Bulan</span>
+                </div>
+                {isMonthMode ? (
+                    <CustomMonthPicker
+                        onMonthChange={onDateChange}
+                    />
+                ) : (
+                    <CustomYearPicker
+                        onYearChange={onDateChange}
+                    />
+                )}
+            </div>
+        </div>
+    );
+});
+
+// --- Table Wrapper with error handling
+type KeuanganTableWrapperProps = {
+    title: string;
+    type: 'masuk' | 'keluar';
+    data?: DataTableKeuanganProps['datas'];
+    isLoading: boolean;
+    error?: Error | null;
+};
+
+const KeuanganTableWrapper = React.memo(({
+    title,
+    type,
+    data = [],
+    isLoading,
+    error
+}: KeuanganTableWrapperProps) => {
+    // Pastikan data selalu array
+    const safeData = Array.isArray(data) ? data : [];
+
+    return (
+        <div className="border rounded-xl flex flex-col bg-white shadow-sm">
+            <div className="px-4 py-3 font-semibold text-lg border-b bg-gray-50 flex items-center justify-between">
+                <span>{title}</span>
+                {safeData.length > 0 && (
+                    <span className="text-sm font-normal text-muted-foreground">
+                        {safeData.length} transaksi
+                    </span>
+                )}
+            </div>
+            <div className="p-4">
+                {error ? (
+                    <div className="py-10 text-center">
+                        <div className="text-red-500 mb-2">Gagal memuat data {type}</div>
+                        <div className="text-sm text-gray-500">{error.message}</div>
+                    </div>
+                ) : isLoading ? (
+                    <div className="py-10 text-center">
+                        <div className="animate-pulse text-muted-foreground">
+                            Memuat data...
+                        </div>
+                    </div>
+                ) : safeData.length === 0 ? (
+                    <div className="py-10 text-center text-gray-500">
+                        Tidak ada transaksi {type}
+                    </div>
+                ) : (
+                    <DataTableKeuangan
+                        datas={safeData}
+                        type={type}
+                        isLoading={false}
+                    />
+                )}
+            </div>
+        </div>
+    );
+});
