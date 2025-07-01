@@ -144,19 +144,19 @@ export class SiswaService {
             const response = await apiClient.get(url, {
                 responseType: 'blob',
                 headers: {
-                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    'Accept': 'text/csv'
                 }
             });
 
             // Create blob and download
             const blob = new Blob([response.data], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                type: 'text/csv'
             });
 
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = `data-siswa-${new Date().toISOString().slice(0, 10)}.xlsx`;
+            link.download = `data-siswa-${new Date().toISOString().slice(0, 10)}.csv`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -173,18 +173,18 @@ export class SiswaService {
             const response = await apiClient.get(`${SiswaService.baseUrl}/template`, {
                 responseType: 'blob',
                 headers: {
-                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    'Accept': 'text/csv'
                 }
             });
 
             const blob = new Blob([response.data], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                type: 'text/csv'
             });
 
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = 'template-siswa.xlsx';
+            link.download = 'template-siswa.csv';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

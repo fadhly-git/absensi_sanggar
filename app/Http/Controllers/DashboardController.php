@@ -14,23 +14,23 @@ class DashboardController extends Controller
     public function getSummary(Request $request)
     {
         // Debug logging untuk troubleshooting
-        Log::info('Dashboard summary requested', [
-            'user_id' => Auth::id(),
-            'auth_check' => Auth::check(),
-            'user_agent' => $request->userAgent(),
-            'session_id' => $request->session()->getId(),
-        ]);
+        // Log::info('Dashboard summary requested', [
+        //     'user_id' => Auth::id(),
+        //     'auth_check' => Auth::check(),
+        //     'user_agent' => $request->userAgent(),
+        //     'session_id' => $request->session()->getId(),
+        // ]);
 
         // Pastikan user authenticated
         if (!Auth::check()) {
-            Log::warning('Unauthorized dashboard summary request');
+            // Log::warning('Unauthorized dashboard summary request');
             return response()->json([
                 'message' => 'Unauthorized - Please login first'
             ], 401);
         }
 
         $user = Auth::user();
-        Log::info("Dashboard summary accessed by user: {$user->id}");
+        // Log::info("Dashboard summary accessed by user: {$user->id}");
 
         try {
             // Data Siswa
@@ -41,27 +41,27 @@ class DashboardController extends Controller
             $saldoTerakhir = Keuangan::query()
                 ->selectRaw('SUM(uang_masuk) - SUM(uang_keluar) as total')
                 ->value('total') ?? 0;
-            
+
             $transaksiTerakhir = Keuangan::query()->latest('id')->first();
             $saldoSebelumnya = $saldoTerakhir;
-            
+
             if ($transaksiTerakhir) {
                 $saldoSebelumnya = $saldoTerakhir - $transaksiTerakhir->uang_masuk + $transaksiTerakhir->uang_keluar;
             }
-            
+
             // Data Absensi dengan perbandingan 2 pertemuan terakhir
             $recentDates = Absensi::select('tanggal')
                 ->distinct()
                 ->orderBy('tanggal', 'desc')
                 ->limit(2)
                 ->pluck('tanggal');
-                
-            $siswaBerangkatMingguIni = $recentDates->isNotEmpty() ? 
+
+            $siswaBerangkatMingguIni = $recentDates->isNotEmpty() ?
                 Absensi::where('tanggal', $recentDates->first())
                     ->distinct()
                     ->count('id_siswa') : 0;
-                    
-            $siswaBerangkatMingguLalu = $recentDates->count() > 1 ? 
+
+            $siswaBerangkatMingguLalu = $recentDates->count() > 1 ?
                 Absensi::where('tanggal', $recentDates->last())
                     ->distinct()
                     ->count('id_siswa') : 0;
@@ -79,19 +79,19 @@ class DashboardController extends Controller
                 ],
             ];
 
-            Log::info('Dashboard summary returned successfully', [
-                'user_id' => $user->id,
-                'data_summary' => $responseData
-            ]);
+            // Log::info('Dashboard summary returned successfully', [
+            //     'user_id' => $user->id,
+            //     'data_summary' => $responseData
+            // ]);
 
             return response()->json($responseData);
 
         } catch (\Exception $e) {
-            Log::error('Error generating dashboard summary', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            // Log::error('Error generating dashboard summary', [
+            //     'user_id' => $user->id,
+            //     'error' => $e->getMessage(),
+            //     'trace' => $e->getTraceAsString()
+            // ]);
 
             return response()->json([
                 'message' => 'Error generating dashboard summary',

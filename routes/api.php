@@ -29,18 +29,20 @@ Route::prefix('admin')->middleware(['web', 'auth'])->group(function () {
 
     // Absensi
     Route::prefix('absensi')->group(function () {
-        Route::get('siswa-list', [AbsensiController::class, 'getAbsentStudents'])
-            ->name('api.admin.absensi.siswa-list');
-        Route::get('count', [AbsensiController::class, 'jumlahSiswaMasuk'])
-            ->name('api.admin.absensi.count');
-        Route::post('/', [AbsensiController::class, 'store'])
-            ->name('api.admin.absensi.store');
-        Route::put('{id}', [AbsensiController::class, 'update'])
-            ->name('api.admin.absensi.update');
-        Route::delete('{id}', [AbsensiController::class, 'destroy'])
-            ->name('api.admin.absensi.destroy');
         Route::get('weekly-report', [AbsensiController::class, 'generateWeeklyReport'])
             ->name('api.admin.absensi.weekly-report');
+
+        Route::get('weekly-report/export', [AbsensiController::class, 'exportWeeklyReport'])
+            ->name('api.admin.absensi.weekly-report.export');
+
+        Route::get('count', [AbsensiController::class, 'getAttendanceCount'])
+            ->name('api.admin.absensi.count');
+
+        Route::get('siswa-aktif', [AbsensiController::class, 'getActiveSiswa'])
+            ->name('api.admin.absensi.siswa-aktif');
+
+        Route::post('/', [AbsensiController::class, 'store'])
+            ->name('api.admin.absensi.store');
     });
 
     // Siswa - Updated routes for simplified structure

@@ -1,177 +1,353 @@
-import { CardDH } from '@/components/card-dh';
-import { CustomMonthPicker, CustomYearPicker } from '@/components/month-picker';
-import { InsertDataDH } from '@/components/daftar-hadir/tambahdaftar';
-import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app-layout';
-import { Siswa } from '@/pages/table/data-table';
-import { type BreadcrumbItem } from '@/types';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useMemo, useCallback } from 'react';
 import { Head } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+
+// Simple replacement components for missing imports
+const CardDH = ({ jumlah_siswa_m, jumlah_siswa_s, isLoading }: { jumlah_siswa_m: number; jumlah_siswa_s: number; isLoading: boolean }) => (
+    <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 bg-green-50 rounded-lg">
+            <h3 className="text-lg font-semibold text-green-800">Siswa Masuk</h3>
+            <p className="text-2xl font-bold text-green-900">{isLoading ? '...' : jumlah_siswa_m}</p>
+        </div>
+        <div className="p-4 bg-red-50 rounded-lg">
+            <h3 className="text-lg font-semibold text-red-800">Siswa Keluar</h3>
+            <p className="text-2xl font-bold text-red-900">{isLoading ? '...' : jumlah_siswa_s}</p>
+        </div>
+    </div>
+);
+
+const LoadingSpinner = () => (
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+);
+
+const ErrorMessage = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+    <div className="text-center py-8">
+        <p className="text-red-600 mb-4">{message}</p>
+        <button onClick={onRetry} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            Coba Lagi
+        </button>
+    </div>
+);
+
+import { CustomMonthPicker, CustomYearPicker } from '@/components/month-picker';
 import { Switch } from '@/components/ui/switch';
-import axios from 'axios';
-import { useCallback, useEffect, useState } from 'react';
-import { DataTableDH } from './table/data-table';
-import { ExportButton } from '@/components/daftar-hadir/export-data';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+import { AbsensiWeeklyTable } from '@/components/absensi/AbsensiWeeklyTable';
+import { AbsensiInputDialog } from '@/components/absensi/AbsensiInputDialog';
+
+import {
+    useWeeklyAbsensi,
+    useAttendanceCount,
+    useActiveSiswa,
+    useCreateAbsensi,
+    useExportAbsensi
+} from '@/hooks/useAbsensi';
+import { useDebounce } from '@/hooks/use-debounce';
+
+import type { BreadcrumbItem } from '@/types';
+import type { Siswa } from '@/types/siswa';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Daftar Hadir',
-        href: 'daftar-hadir',
-    },
+    { title: 'Daftar Hadir', href: 'daftar-hadir' },
 ];
 
-export type DataSiswa = {
-    id: number;
-    nama: string;
-    alamat: string;
-    status: number;
-};
-
-export type DataDH = {
-    masuk: number;
-    keluar: number;
-};
-
 export default function DaftarHadir() {
-    // const [params, setParams] = useState('bulan');
-    // const [state, setState] = useState(true);
-    const year = new Date().getFullYear().toString();
-    const month = new Date().getMonth() + 1;
-    const monthString = month < 10 ? `${year}-0${month}` : `${year}-${month}`;
-    const [date, setDate] = useState(monthString);
-    const [count, setCount] = useState<DataDH>({ masuk: 0, keluar: 0 });
-    const [state, setState] = useState(true);
+    // State management
+    const [filterMode, setFilterMode] = useState<'bulan' | 'tahun'>('bulan');
+    const [periode, setPeriode] = useState(() => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        return filterMode === 'bulan'
+            ? `${year}-${month.toString().padStart(2, '0')}`
+            : year.toString();
+    });
+
+
     const [searchValue, setSearchValue] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-
-    const [data, setData] = useState<Siswa[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<Error | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    // const [search, setSearch] = useState('');
-    const [params, setParams] = useState('bulan');
-    const limit = 35; // Batas data per halaman
+    const [showAddDialog, setShowAddDialog] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
 
-    useEffect(() => {
-        axios
-            .get('/api/atmin/absensi/get-count-absensi')
-            .then((response) => {
-                setCount(response.data);
-                // console.log(response.data);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+    // Debounced search
+    const debouncedSearch = useDebounce(searchValue, 500);
+
+    // Memoized filter params - fix parameter structure
+    const filterParams = useMemo(() => ({
+        periode,
+        mode: filterMode,
+        ...(debouncedSearch && { search: debouncedSearch }),
+        page: currentPage,
+        limit: 20
+    }), [periode, filterMode, debouncedSearch, currentPage]);
+
+    console.info('LAYER 1 (KOMPONEN): useMemo membuat objek ini:', filterParams);
+
+    // Data fetching
+    const {
+        data: weeklyData,
+        isLoading: weeklyLoading,
+        error: weeklyError,
+        refetch: refetchWeekly
+    } = useWeeklyAbsensi(filterParams);
+
+    const {
+        data: countData,
+        isLoading: countLoading,
+        error: countError
+    } = useAttendanceCount(periode, filterMode);
+
+    const {
+        data: siswaData,
+        isLoading: siswaLoading,
+        error: siswaError
+    } = useActiveSiswa();
+
+    // Mutations
+    const createAbsensi = useCreateAbsensi();
+    const exportAbsensi = useExportAbsensi();
+
+
+    // Event handlers
+    const handleModeChange = useCallback((checked: boolean) => {
+        const newMode = checked ? 'bulan' : 'tahun';
+        setFilterMode(newMode);
+        setCurrentPage(1);
+
+        // Update periode format
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        setPeriode(newMode === 'bulan'
+            ? `${year}-${month.toString().padStart(2, '0')}`
+            : year.toString()
+        );
     }, []);
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearch(searchValue);
-        }, 500);
+    const handlePeriodeChange = useCallback((newPeriode: string) => {
+        setPeriode(newPeriode);
+        setCurrentPage(1);
+    }, []);
 
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [searchValue]);
+    const handleSearchChange = useCallback((value: string) => {
+        setSearchValue(value);
+        setCurrentPage(1);
+    }, []);
 
-    // Update params when switch changes
-    useEffect(() => {
-        setParams(state ? 'bulan' : 'tahun');
-    }, [state]);
+    const handlePageChange = useCallback((page: number) => {
+        setCurrentPage(page);
+    }, []);
 
-    const fetchData = useCallback(
-        async (page: number) => {
-            setLoading(true);
-            try {
-                const response = await axios.get('/api/get-absensi/index', {
-                    params: {
-                        periode: date,
-                        mode: params,
-                        page,
-                        limit,
-                        search: debouncedSearch || undefined,
-                    },
-                });
-                setData(response.data.data);
-                setCurrentPage(response.data.currentPage);
-                setTotalPages(response.data.totalPages);
-            } catch (err) {
-                setError(err as Error);
-            } finally {
-                setLoading(false);
+    const handleAddAbsensi = useCallback((absensiData: any[]) => {
+        createAbsensi.mutate(absensiData, {
+            onSuccess: () => {
+                setShowAddDialog(false);
+                refetchWeekly();
             }
-        },
-        [date, params, limit, debouncedSearch],
-    );
+        });
+    }, [createAbsensi, refetchWeekly]);
 
-    useEffect(() => {
-        fetchData(currentPage); // Always start from page 1 when filters change
-    }, [fetchData, currentPage]);
+    const handleExport = useCallback(() => {
+        exportAbsensi.mutate({
+            periode,
+            mode: filterMode,
+            ...(debouncedSearch && { search: debouncedSearch })
+        });
+    }, [exportAbsensi, periode, filterMode, debouncedSearch]);
 
-    const handleNextPage = () => {
-        if (currentPage < totalPages) {
-            setCurrentPage((prev) => Number(prev) + 1);
-        }
-    };
+    // Memoized values
+    const tableData = useMemo(() => weeklyData?.data || [], [weeklyData]);
+    const pagination = useMemo(() => weeklyData?.pagination, [weeklyData]);
+    const attendanceCount = useMemo(() => countData || { masuk: 0, keluar: 0 }, [countData]);
 
-    const handlePreviousPage = () => {
-        if (currentPage > 1) {
-            setCurrentPage((prev) => Number(prev) - 1);
-        }
-    };
+    // Transform activeSiswa to match the expected Siswa interface
+    const activeSiswa = useMemo(() => {
+        if (!siswaData) return [];
 
-    // Stable switch handler
-    const handleSwitchChange = useCallback((checked: boolean) => {
-        setState(checked);
-    }, []);
+        return (siswaData || []).map((siswa: any): Siswa => ({
+            id: siswa.id,
+            nama: siswa.nama || '',
+            alamat: siswa.alamat || '',
+            status: Boolean(siswa.status === 'active' || siswa.status === 1 || siswa.status === true),
+            status_text: siswa.status_text || (siswa.status ? 'Aktif' : 'Tidak Aktif'),
+            total_absensi: siswa.total_absensi || 0,
+            absensi_bulan_ini: siswa.absensi_bulan_ini || 0,
+            created_at: siswa.created_at || new Date().toISOString(),
+            updated_at: siswa.updated_at || new Date().toISOString(),
+            deleted_at: siswa.deleted_at || null
+        }));
+    }, [siswaData]);
+
+    // Loading states
+    const isLoading = weeklyLoading || countLoading;
+    const hasError = weeklyError || countError || siswaError;
 
     return (
-        <>
-            <AppLayout breadcrumbs={breadcrumbs}>
-                <Head title="Daftar Hadir" />
-                <div className="flex h-full flex-col gap-2 rounded-xl p-4">
-                    <div className="flex flex-col items-center gap-4">
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Daftar Hadir" />
+
+            <div className="space-y-6 p-6">
+                {/* Filter Controls */}
+                <div className="bg-card p-6 rounded-lg shadow-sm">
+                    <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">Tahun</span>
+                                <Switch
+                                    checked={filterMode === 'bulan'}
+                                    onCheckedChange={handleModeChange}
+                                />
+                                <span className="text-sm font-medium">Bulan</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {filterMode === 'bulan' ? (
+                                    <CustomMonthPicker
+                                        onMonthChange={handlePeriodeChange}
+                                    />
+                                ) : (
+                                    <CustomYearPicker
+                                        onYearChange={handlePeriodeChange}
+                                    />
+                                )}
+                            </div>
+                        </div>
+
                         <div className="flex items-center gap-2">
-                            <div className="px-2 font-bold">Tahun</div>
-                            <Switch checked={state} onCheckedChange={handleSwitchChange} />
-                            <div className="px-2 font-bold">Bulan</div>
-                        </div>
-                        <div>
-                            {state ? <CustomMonthPicker onMonthChange={setDate} /> : <CustomYearPicker onYearChange={(year) => setDate(year)} />}
-                        </div>
-                    </div>
-                    <div className="grid auto-rows-min gap-4 md:grid-cols-1">
-                        <div className="border-sidebar-border/70 dark:border-sidebar-border relative aspect-auto overflow-hidden rounded-xl border">
-                            <div className="flex justify-end gap-3 lg:gap-6">
-                                <ExportButton priode={date} mode={params}/>
-                                <InsertDataDH />
-                            </div>
-                            <CardDH jumlah_siswa_m={Number(count.masuk)} jumlah_siswa_s={Number(count.keluar)} />
-                        </div>
-                    </div>
-                    <div className="grid auto-rows-min gap-4 md:grid-cols-1">
-                        <div className="border-sidebar-border dark:border-sidebar-border relative overflow-hidden rounded-xl border">
-                            <DataTableDH datas={data} loading={loading} error={error} setSearch={setSearchValue} />
-                            <div className="flex items-center justify-between p-4">
-                                <Button
-                                    variant={'outline'}
-                                    onClick={handlePreviousPage}
-                                    disabled={currentPage === 1}
-                                    className="px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground"
-                                >
-                                    Previous
-                                </Button>
-                                <span>
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <Button onClick={handleNextPage} disabled={currentPage === totalPages} className="py- rounded-md px-4">
-                                    Next
-                                </Button>
-                            </div>
+                            <Input
+                                placeholder="Cari nama siswa..."
+                                value={searchValue}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                className="w-64"
+                            />
+
+                            <Button
+                                variant="outline"
+                                onClick={handleExport}
+                                disabled={exportAbsensi.isPending || !!hasError}
+                            >
+                                {exportAbsensi.isPending ? 'Mengekspor...' : 'Export'}
+                            </Button>
+
+                            <Button
+                                onClick={() => setShowAddDialog(true)}
+                                disabled={siswaLoading || !!siswaError}
+                            >
+                                Tambah Data
+                            </Button>
                         </div>
                     </div>
                 </div>
-            </AppLayout>
-        </>
+
+                {/* Stats Card */}
+                <div className="bg-card p-6 rounded-lg shadow-sm">
+                    {countError ? (
+                        <div className="text-red-600 text-center py-4">
+                            Gagal memuat statistik kehadiran
+                        </div>
+                    ) : (
+                        <CardDH
+                            jumlah_siswa_m={attendanceCount.masuk}
+                            jumlah_siswa_s={attendanceCount.keluar}
+                            isLoading={countLoading}
+                        />
+                    )}
+                </div>
+
+                {/* Data Table */}
+                <div className="bg-card rounded-lg shadow-sm overflow-hidden">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <LoadingSpinner />
+                        </div>
+                    ) : weeklyError ? (
+                        <div className="p-6">
+                            <ErrorMessage
+                                message="Gagal memuat data absensi. Periksa parameter filter."
+                                onRetry={refetchWeekly}
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <AbsensiWeeklyTable
+                                data={tableData}
+                                sundays={weeklyData?.sundays || []}
+                                isLoading={false}
+                            />
+
+                            {/* Pagination */}
+                            {pagination && pagination.totalPages > 1 && (
+                                <div className="flex items-center justify-between p-4 border-t">
+                                    <div className="text-sm text-muted-foreground">
+                                        Menampilkan {((pagination.currentPage - 1) * pagination.perPage) + 1} - {Math.min(pagination.currentPage * pagination.perPage, pagination.totalRows)} dari {pagination.totalRows} data
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                            disabled={pagination.currentPage === 1 || isLoading}
+                                        >
+                                            Previous
+                                        </Button>
+
+                                        <div className="flex items-center gap-1">
+                                            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                                const page = i + 1;
+                                                return (
+                                                    <Button
+                                                        key={page}
+                                                        variant={page === pagination.currentPage ? "default" : "outline"}
+                                                        size="sm"
+                                                        onClick={() => handlePageChange(page)}
+                                                        disabled={isLoading}
+                                                    >
+                                                        {page}
+                                                    </Button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                            disabled={pagination.currentPage === pagination.totalPages || isLoading}
+                                        >
+                                            Next
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* Show siswa loading error if needed */}
+                {siswaError && (
+                    <div className="bg-red-50 p-4 rounded-lg">
+                        <p className="text-red-600 text-sm">
+                            Gagal memuat data siswa. Fitur tambah data tidak tersedia.
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            {/* Add Absensi Dialog */}
+            {!siswaError && (
+                <AbsensiInputDialog
+                    open={showAddDialog}
+                    onClose={() => setShowAddDialog(false)}
+                    siswaList={activeSiswa}
+                    tanggal={selectedDate}
+                    setTanggal={setSelectedDate}
+                    onSubmit={handleAddAbsensi}
+                />
+            )}
+        </AppLayout>
     );
 }

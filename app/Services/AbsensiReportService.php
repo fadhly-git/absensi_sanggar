@@ -2,142 +2,186 @@
 
 namespace App\Services;
 
+use App\Models\Absensi;
 use App\Models\Siswa;
-use Carbon\CarbonInterface;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class AbsensiReportService
 {
     /**
-     * Create a new class instance.
+     * Generate weekly report dengan optimasi query
      */
-    public function __construct()
-    {
-        //
+    public function generateWeeklyReport(
+        string $periode,
+        string $mode,
+        int $page = 1,
+        int $limit = 20,
+        ?string $search = null
+    ): LengthAwarePaginator {
+
+        $cacheKey = "weekly_report_" . md5($periode . $mode . $page . $limit . ($search ?? ''));
+
+        return Cache::tags(['absensi', 'report'])->remember($cacheKey, 300, function () use ($periode, $mode, $page, $limit, $search) {
+            return $this->buildOptimizedQuery($periode, $mode, $page, $limit, $search);
+        });
     }
 
-    public function generateWeeklyReport(Request $request)
-    {
-        $validated = $request->validate([
-            'periode' => 'required|string|max:7',
-            'mode' => 'required|in:bulan,tahun',
-            'page' => 'integer|min:1',
-            'limit' => 'integer|min:1|max:200',
-            'search' => 'nullable|string|max:255',
-        ]);
+    /**
+     * Optimized query builder
+     */
+    private function buildOptimizedQuery(
+        string $periode,
+        string $mode,
+        int $page,
+        int $limit,
+        ?string $search
+    ): LengthAwarePaginator {
 
-        $periode = $validated['periode'];
-        $mode = $validated['mode'];
-        $page = $validated['page'] ?? 1;
-        $limit = $validated['limit'] ?? 35;
-        $search = $validated['search'] ?? null;
+        [$startDate, $endDate] = $this->getDateRange($periode, $mode);
+        $sundays = $this->getSundaysInRange($startDate, $endDate);
 
-        $periodeDate = Carbon::createFromFormat($mode === 'bulan' ? 'Y-m' : 'Y', $periode);
-        $startDate = $periodeDate->copy()->startOf($mode === 'bulan' ? 'month' : 'year');
-        $endDate = $periodeDate->copy()->endOf($mode === 'bulan' ? 'month' : 'year');
+        if (empty($sundays)) {
+            return new LengthAwarePaginator([], 0, $limit, $page);
+        }
 
-        // Generate semua hari Minggu dalam rentang tanggal
-        $sundays = [];
-        // 2. Ubah Carbon::SUNDAY menjadi CarbonInterface::SUNDAY
-        $current = $startDate->copy()->startOfWeek(CarbonInterface::SUNDAY);
-        while ($current <= $endDate) {
-            if ($current >= $startDate) {
-                $sundays[] = $current->format('Y-m-d');
+        // Optimized base query
+        $baseQuery = DB::table('siswas as s')
+            ->select([
+                's.id as siswa_id',
+                's.nama as siswa_nama',
+                's.alamat as siswa_alamat',
+                's.status as siswa_status'
+            ])
+            ->whereNull('s.deleted_at')
+            ->where('s.status', 1);
+
+        // Apply search filter
+        if ($search) {
+            $baseQuery->where(function ($q) use ($search) {
+                $q->where('s.nama', 'like', "%{$search}%")
+                    ->orWhere('s.alamat', 'like', "%{$search}%");
+            });
+        }
+
+        // Get total count for pagination
+        $totalQuery = clone $baseQuery;
+        $total = $totalQuery->count();
+
+        // Add attendance columns using LEFT JOIN for better performance
+        $attendanceSubquery = DB::table('absensis as a')
+            ->select([
+                'a.id_siswa',
+                'a.tanggal',
+                DB::raw('CASE WHEN a.bonus = 1 THEN "B" ELSE "H" END as status')
+            ])
+            ->whereBetween('a.tanggal', [$startDate, $endDate])
+            ->whereIn('a.tanggal', $sundays);
+
+        // Create pivot table for attendance
+        $attendanceData = $attendanceSubquery->get()->groupBy('id_siswa');
+
+        // Get paginated siswa
+        $offset = ($page - 1) * $limit;
+        $siswaData = $baseQuery->skip($offset)->take($limit)->get();
+
+        // Merge attendance data with siswa data
+        $results = $siswaData->map(function ($siswa) use ($attendanceData, $sundays) {
+            $siswaAttendance = $attendanceData->get($siswa->siswa_id, collect());
+
+            foreach ($sundays as $sunday) {
+                $attendance = $siswaAttendance->firstWhere('tanggal', $sunday);
+                $siswa->{$sunday} = $attendance ? $attendance->status : 'T';
             }
-            $current->addWeek();
-        }
 
-        // Base Query menggunakan Query Builder
-        $query = DB::table('siswas as s')
-            ->select('s.id as siswa_id', 's.nama as siswa_nama', 's.alamat as siswa_alamat', 's.status as siswa_status')
-            ->whereNull('s.deleted_at') // Hanya ambil siswa yang aktif
-            ->orderBy('s.nama', 'ASC');
-
-        // Tambahkan kolom dinamis untuk setiap hari Minggu
-        foreach ($sundays as $sunday) {
-            $query->addSelect(DB::raw(
-                "MAX(CASE WHEN a.tanggal = ? THEN CASE WHEN a.bonus = 1 THEN 'B' ELSE 'H' END END) AS `$sunday`"
-            ));
-        }
-
-        // Left Join dengan subquery untuk performa lebih baik
-        $query->leftJoin('absensis as a', function ($join) use ($startDate, $endDate, $sundays) {
-            $join->on('s.id', '=', 'a.id_siswa')
-                ->whereIn('a.tanggal', $sundays);
+            return $siswa;
         });
 
-        // Bind tanggal ke Raw Select
-        $query->addBinding($sundays, 'select');
-
-        // Tambahkan filter pencarian
-        if ($search) {
-            $query->where('s.nama', 'like', '%' . $search . '%');
-        }
-
-        $query->groupBy('s.id', 's.nama', 's.alamat', 's.status');
-
-        // Paginasi
-        return $query->paginate($limit, ['*'], 'page', $page);
+        return new LengthAwarePaginator(
+            $results->toArray(),
+            $total,
+            $limit,
+            $page,
+            [
+                'path' => request()->url(),
+                'pageName' => 'page'
+            ]
+        );
     }
 
     /**
-     * Mendapatkan siswa yang tidak diabsen pada tanggal tertentu.
-     * Logika dipindahkan dari AbsensiController@getAbsentStudents.
-     *
-     * @param string $date (format Y-m-d)
-     * @return \Illuminate\Database\Eloquent\Collection
+     * Get attendance count dengan optimasi
      */
-    public function getAbsentStudentsForDate(string $date)
+    public function getAttendanceCount(string $periode, string $mode): array
     {
-        return Siswa::query()
-            ->where('status', 1) // Asumsi hanya cek siswa aktif
-            ->whereNull('deleted_at')
-            ->whereDoesntHave('absensi', function ($query) use ($date) {
-                $query->whereDate('tanggal', $date);
-            })
-            ->orderBy('nama', 'ASC')
-            ->select('id', 'nama', 'alamat')
-            ->get();
+        $cacheKey = "attendance_count_{$periode}_{$mode}";
+
+        return Cache::tags(['absensi', 'stats'])->remember($cacheKey, 600, function () use ($periode, $mode) {
+            [$startDate, $endDate] = $this->getDateRange($periode, $mode);
+
+            // Single query untuk mendapatkan count
+            $stats = DB::table('absensis as a')
+                ->select([
+                    DB::raw('COUNT(DISTINCT a.id_siswa) as siswa_hadir'),
+                    DB::raw('(SELECT COUNT(*) FROM siswas WHERE status = 1 AND deleted_at IS NULL) as total_siswa')
+                ])
+                ->whereBetween('a.tanggal', [$startDate, $endDate])
+                ->first();
+
+            $masuk = $stats->siswa_hadir ?? 0;
+            $totalSiswa = $stats->total_siswa ?? 0;
+            $keluar = max(0, $totalSiswa - $masuk);
+
+            return compact('masuk', 'keluar');
+        });
     }
 
     /**
-     * Membandingkan jumlah siswa pada 2 pertemuan terakhir.
-     * Logika dipindahkan dari AbsensiController@jumlahSiswaMasuk.
-     *
-     * @return array
+     * Get Sundays in date range dengan optimasi
      */
-    public function getAttendanceCountComparison(): array
+    private function getSundaysInRange(string $startDate, string $endDate): array
     {
-        $recentDates = DB::table('absensis')
-            ->select('tanggal')
-            ->distinct()
-            ->orderBy('tanggal', 'desc')
-            ->limit(2)
-            ->pluck('tanggal');
+        $cacheKey = "sundays_" . md5($startDate . $endDate);
 
-        if ($recentDates->isEmpty()) {
-            return ['minggu_ini' => 0, 'minggu_sebelumnya' => 0];
+        return Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+            $sundays = [];
+            $start = Carbon::parse($startDate);
+            $end = Carbon::parse($endDate);
+
+            // Find first Sunday
+            $current = $start->copy();
+            while ($current->dayOfWeek !== Carbon::SUNDAY && $current->lte($end)) {
+                $current->addDay();
+            }
+
+            // Collect all Sundays
+            while ($current->lte($end)) {
+                $sundays[] = $current->format('Y-m-d');
+                $current->addWeek();
+            }
+
+            return $sundays;
+        });
+    }
+
+    /**
+     * Helper methods
+     */
+    private function getDateRange(string $periode, string $mode): array
+    {
+        if ($mode === 'tahun') {
+            return [
+                $periode . '-01-01',
+                $periode . '-12-31'
+            ];
+        } else {
+            $date = Carbon::createFromFormat('Y-m', $periode);
+            return [
+                $date->startOfMonth()->format('Y-m-d'),
+                $date->endOfMonth()->format('Y-m-d')
+            ];
         }
-
-        $jumlahSiswaMingguIni = DB::table('absensis')
-            ->where('tanggal', $recentDates->first())
-            ->distinct()
-            ->count('id_siswa');
-
-        $jumlahSiswaMingguLalu = 0;
-        if ($recentDates->count() > 1) {
-            $jumlahSiswaMingguLalu = DB::table('absensis')
-                ->where('tanggal', $recentDates->last())
-                ->distinct()
-                ->count('id_siswa');
-        }
-
-        return [
-            'minggu_ini' => $jumlahSiswaMingguIni,
-            'minggu_sebelumnya' => $jumlahSiswaMingguLalu,
-        ];
     }
 }

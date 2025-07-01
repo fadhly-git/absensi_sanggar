@@ -8,85 +8,169 @@ use App\Http\Requests\StoreAbsensiRequest;
 use App\Exports\AttendanceExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Http\JsonResponse;
 
 class AbsensiController extends Controller
 {
-    protected $absensiService;
-    protected $reportService;
-
-    // Inject kedua service yang kita butuhkan
-    public function __construct(AbsensiService $absensiService, AbsensiReportService $reportService)
-    {
-        $this->absensiService = $absensiService;
-        $this->reportService = $reportService;
+    public function __construct(
+        protected AbsensiService $absensiService,
+        protected AbsensiReportService $reportService
+    ) {
     }
 
     /**
-     * Menyimpan data absensi baru. Delegasikan ke service.
+     * Get weekly report dengan caching
      */
-    public function store(StoreAbsensiRequest $request)
+    public function generateWeeklyReport(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'periode' => 'required|string',
+            'mode' => 'required|in:tahun,bulan',
+            'page' => 'integer|min:1',
+            'limit' => 'integer|min:1|max:50',
+            'search' => 'nullable|string|max:255'
+        ]);
+
         try {
-            $this->absensiService->saveFromRequest($request);
-            return response()->json(['message' => 'Data absensi berhasil disimpan.'], 201);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            $paginator = $this->reportService->generateWeeklyReport(
+                $validated['periode'],
+                $validated['mode'],
+                $validated['page'] ?? 1,
+                min($validated['limit'] ?? 20, 50),
+                $validated['search'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $paginator->items(),
+                'pagination' => [
+                    'currentPage' => $paginator->currentPage(),
+                    'totalPages' => $paginator->lastPage(),
+                    'totalRows' => $paginator->total(),
+                    'perPage' => $paginator->perPage(),
+                    'hasMore' => $paginator->hasMorePages()
+                ]
+            ]);
         } catch (\Exception $e) {
-            report($e); // Log error untuk debugging
-            return response()->json(['message' => 'Terjadi kesalahan pada server.'], 500);
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memuat data',
+                'error' => app()->environment('local') ? $e->getMessage() : null
+            ], 500);
         }
     }
 
     /**
-     * Men-generate laporan mingguan. Delegasikan ke service.
-     * Method ini sudah baik, tidak perlu diubah.
+     * Store absensi dengan validasi
      */
-    public function generateWeeklyReport(Request $request)
+    public function store(StoreAbsensiRequest $request): JsonResponse
     {
-        $paginator = $this->reportService->generateWeeklyReport($request);
+        try {
+            $result = $this->absensiService->saveFromRequest($request);
 
-        return response()->json([
-            'data' => $paginator->items(),
-            'pagination' => [
-                'currentPage' => $paginator->currentPage(),
-                'totalPages' => $paginator->lastPage(),
-                'totalRows' => $paginator->total(),
-                'perPage' => $paginator->perPage(),
-            ]
+            return response()->json([
+                'success' => true,
+                'message' => 'Data absensi berhasil disimpan.',
+                'data' => $result
+            ], 201);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan pada server.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get attendance count dengan caching
+     */
+    public function getAttendanceCount(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'periode' => 'required|string',
+            'mode' => 'required|in:tahun,bulan'
         ]);
+
+        try {
+            $count = $this->reportService->getAttendanceCount(
+                $validated['periode'],
+                $validated['mode']
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $count
+            ]);
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat statistik'
+            ], 500);
+        }
     }
 
     /**
-     * Mengekspor laporan ke Excel.
-     * Method ini sudah baik, tidak perlu diubah.
+     * Get active siswa untuk form absensi
      */
-    public function exportExcel(Request $request)
+    public function getActiveSiswa(): JsonResponse
     {
-        $request->merge(['limit' => 9999]); 
-        
-        $paginator = $this->reportService->generateWeeklyReport($request);
-        $data = $paginator->items();
+        try {
+            $siswa = $this->absensiService->getActiveSiswaForAbsensi();
 
-        return Excel::download(new AttendanceExport($data), 'rekap_absensi_' . date('Y-m-d') . '.xlsx');
+            return response()->json([
+                'success' => true,
+                'data' => $siswa
+            ]);
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data siswa'
+            ], 500);
+        }
     }
 
     /**
-     * Mendapatkan siswa yang tidak hadir. Delegasikan ke service.
+     * Export attendance report
      */
-    public function getAbsentStudents(Request $request)
+    public function exportWeeklyReport(Request $request)
     {
-        $validated = $request->validate(['date' => 'required|date_format:Y-m-d']);
-        $absentStudents = $this->reportService->getAbsentStudentsForDate($validated['date']);
+        $validated = $request->validate([
+            'periode' => 'required|string',
+            'mode' => 'required|in:tahun,bulan',
+            'search' => 'nullable|string|max:255'
+        ]);
 
-        return response()->json($absentStudents);
-    }
+        try {
+            // Get all data untuk export (tanpa pagination)
+            $data = $this->reportService->generateWeeklyReport(
+                $validated['periode'],
+                $validated['mode'],
+                1,
+                10000, // Large limit untuk export
+                $validated['search'] ?? null
+            );
 
-    /**
-     * Membandingkan jumlah siswa masuk. Delegasikan ke service.
-     */
-    public function jumlahSiswaMasuk()
-    {
-        $comparison = $this->reportService->getAttendanceCountComparison();
-        return response()->json($comparison);
+            $filename = "absensi-{$validated['mode']}-{$validated['periode']}.xlsx";
+
+            return Excel::download(
+                new AttendanceExport($data->items()),
+                $filename
+            );
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengekspor data'
+            ], 500);
+        }
     }
 }

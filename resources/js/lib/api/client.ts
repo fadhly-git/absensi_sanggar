@@ -36,13 +36,13 @@ class ApiClient {
                 }
 
                 // Log request in development
-                if (process.env.NODE_ENV === 'development') {
-                    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-                        params: config.params,
-                        data: config.data,
-                        headers: this.sanitizeHeaders(config.headers)
-                    });
-                }
+                // if (process.env.NODE_ENV === 'development') {
+                //     console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+                //         params: config.params,
+                //         data: config.data,
+                //         headers: this.sanitizeHeaders(config.headers)
+                //     });
+                // }
 
                 return config;
             },
@@ -57,10 +57,10 @@ class ApiClient {
             (response: AxiosResponse) => {
                 // Log response in development
                 if (process.env.NODE_ENV === 'development') {
-                    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-                        status: response.status,
-                        data: response.data
-                    });
+                    // console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+                    //     status: response.status,
+                    //     data: response.data
+                    // });
                 }
                 return response;
             },
@@ -114,7 +114,7 @@ class ApiClient {
     private handle401Error(): void {
         // Remove invalid token
         this.removeAuthToken();
-        
+
         // Redirect to login if not already there
         if (!window.location.pathname.includes('/login')) {
             console.warn('Unauthorized access - redirecting to login');
@@ -159,24 +159,25 @@ class ApiClient {
     }
 
     // HTTP Methods
-    async get<T = any>(url: string, params?: any): Promise<AxiosResponse<T>> {
-        return this.instance.get(url, { params });
+    async get<T = any>(url: string, config?: any): Promise<AxiosResponse<T>> {
+        // Langsung teruskan object config, jangan dibungkus ulang.
+        return this.instance.get(url, config);
     }
 
-    async post<T = any>(url: string, data?: any): Promise<AxiosResponse<T>> {
-        return this.instance.post(url, data);
+    async post<T = any>(url: string, data?: any, config?: any): Promise<AxiosResponse<T>> {
+        return this.instance.post(url, data, config);
     }
 
-    async put<T = any>(url: string, data?: any): Promise<AxiosResponse<T>> {
-        return this.instance.put(url, data);
+    async put<T = any>(url: string, data?: any, config?: any): Promise<AxiosResponse<T>> {
+        return this.instance.put(url, data, config);
     }
 
-    async patch<T = any>(url: string, data?: any): Promise<AxiosResponse<T>> {
-        return this.instance.patch(url, data);
+    async patch<T = any>(url: string, data?: any, config?: any): Promise<AxiosResponse<T>> {
+        return this.instance.patch(url, data, config);
     }
 
-    async delete<T = any>(url: string): Promise<AxiosResponse<T>> {
-        return this.instance.delete(url);
+    async delete<T = any>(url: string, config?: any): Promise<AxiosResponse<T>> {
+        return this.instance.delete(url, config);
     }
 
     // File upload method
