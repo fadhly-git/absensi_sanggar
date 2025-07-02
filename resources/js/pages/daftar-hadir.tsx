@@ -39,7 +39,7 @@ const CardDH = ({
             <p className="text-2xl font-bold text-green-900 dark:text-green-100">{isLoading ? '...' : jumlah_siswa_m}</p>
         </div>
         <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-lg">
-            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Siswa Keluar</h3>
+            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Siswa Tidak berangkat</h3>
             <p className="text-2xl font-bold text-red-900 dark:text-red-100">{isLoading ? '...' : jumlah_siswa_s}</p>
         </div>
     </div>
@@ -244,9 +244,10 @@ export default function DaftarHadir() {
 
             <div className="flex h-full flex-col justify-center gap-2 rounded-xl p-4 w-full overflow-auto overflow-x-auto mx-auto">
                 {/* Filter Controls */}
-                <div className="bg-card p-6 rounded-lg shadow-sm">
-                    <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                        <div className="flex items-center gap-4">
+                <div className="bg-card p-6 rounded-lg shadow-sm container w-full">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        {/* Filter controls */}
+                        <div className="flex flex-col gap-2 sm:flex-row items-center justify-center w-full sm:gap-4">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium">Tahun</span>
                                 <Switch
@@ -255,7 +256,6 @@ export default function DaftarHadir() {
                                 />
                                 <span className="text-sm font-medium">Bulan</span>
                             </div>
-
                             <div className="flex items-center gap-2">
                                 {filterMode === 'bulan' ? (
                                     <CustomMonthPicker
@@ -269,32 +269,29 @@ export default function DaftarHadir() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <div>
-                                <Input
-                                    placeholder="Cari nama siswa..."
-                                    value={searchValue}
-                                    onChange={(e) => handleSearchChange(e.target.value)}
-                                    className="w-64"
-                                />
-                            </div>
-                            <div>
-                                <Button
-                                    variant="outline"
-                                    onClick={handleExport}
-                                    disabled={exportAbsensi.isPending || !!hasError}
-                                >
-                                    {exportAbsensi.isPending ? 'Mengekspor...' : 'Export'}
-                                </Button>
-                            </div>
-                            <div>
-                                <Button
-                                    onClick={() => setShowAddDialog(true)}
-                                    disabled={siswaLoading || !!siswaError}
-                                >
-                                    Tambah Data
-                                </Button>
-                            </div>
+                        {/* Action buttons */}
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+                            <Input
+                                placeholder="Cari nama siswa..."
+                                value={searchValue}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                className="w-full sm:w-64"
+                            />
+                            <Button
+                                variant="outline"
+                                onClick={handleExport}
+                                disabled={exportAbsensi.isPending || !!hasError}
+                                className="w-full sm:w-auto"
+                            >
+                                {exportAbsensi.isPending ? 'Mengekspor...' : 'Export'}
+                            </Button>
+                            <Button
+                                onClick={() => setShowAddDialog(true)}
+                                disabled={siswaLoading || !!siswaError}
+                                className="w-full sm:w-auto"
+                            >
+                                Tambah Data
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -315,7 +312,7 @@ export default function DaftarHadir() {
                 </div>
 
                 {/* Data Table */}
-                <div className="flex-1 flex flex-col gap-4 rounded-xl">
+                <div className="flex-1 flex flex-col gap-4 rounded-xl container">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-12">
                             <LoadingSpinner />
@@ -329,13 +326,60 @@ export default function DaftarHadir() {
                         </div>
                     ) : (
                         <>
-                            <div className="relative flex-1 overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-bsorder">
+                            <div className="relative flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-bsorder">
                                 <AbsensiWeeklyTable
                                     data={tableData}
                                     sundays={sundays}
                                     isLoading={false}
                                 />
                             </div>
+                            {/* Pagination */}
+                            {pagination && pagination.totalPages > 1 && (
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t container">
+                                    {/* Info - sembunyikan di layar sangat kecil */}
+                                    <div className="text-xs sm:text-sm text-muted-foreground text-center w-full sm:w-auto">
+                                        Menampilkan {((pagination.currentPage - 1) * pagination.perPage) + 1} - {Math.min(pagination.currentPage * pagination.perPage, pagination.totalRows)} dari {pagination.totalRows} data
+                                    </div>
+
+                                    {/* Pagination controls */}
+                                    <div className="w-full sm:w-auto">
+                                        <div className="flex flex-nowrap overflow-x-auto gap-1 sm:gap-2 items-center justify-center sm:justify-end">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                                disabled={pagination.currentPage === 1 || isLoading}
+                                            >
+                                                Previous
+                                            </Button>
+
+                                            <div className="flex flex-nowrap gap-1">
+                                                {getPaginationRange(pagination.currentPage, pagination.totalPages, 5).map(page => (
+                                                    <Button
+                                                        key={page}
+                                                        variant={page === pagination.currentPage ? "default" : "outline"}
+                                                        size="sm"
+                                                        onClick={() => handlePageChange(page)}
+                                                        disabled={isLoading}
+                                                        className="min-w-[2.5rem] px-2 sm:px-3 whitespace-nowrap"
+                                                    >
+                                                        {page}
+                                                    </Button>
+                                                ))}
+                                            </div>
+
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                                disabled={pagination.currentPage === pagination.totalPages || isLoading}
+                                            >
+                                                Next
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             <AbsensiHadirMingguIni
                                 startDate={sundays[0]}
                                 endDate={sundays[sundays.length - 1]}
@@ -345,48 +389,6 @@ export default function DaftarHadir() {
                                     alert(`Edit absensi: ${absen.nama} (${absen.tanggal})`);
                                 }}
                             />
-                            {/* Pagination */}
-                            {pagination && pagination.totalPages > 1 && (
-                                <div className="flex items-center justify-between p-4 border-t">
-                                    <div className="text-sm text-muted-foreground">
-                                        Menampilkan {((pagination.currentPage - 1) * pagination.perPage) + 1} - {Math.min(pagination.currentPage * pagination.perPage, pagination.totalRows)} dari {pagination.totalRows} data
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handlePageChange(pagination.currentPage - 1)}
-                                            disabled={pagination.currentPage === 1 || isLoading}
-                                        >
-                                            Previous
-                                        </Button>
-
-                                        <div className="flex items-center gap-1">
-                                            {getPaginationRange(pagination.currentPage, pagination.totalPages, 5).map(page => (
-                                                <Button
-                                                    key={page}
-                                                    variant={page === pagination.currentPage ? "default" : "outline"}
-                                                    size="sm"
-                                                    onClick={() => handlePageChange(page)}
-                                                    disabled={isLoading}
-                                                >
-                                                    {page}
-                                                </Button>
-                                            ))}
-                                        </div>
-
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handlePageChange(pagination.currentPage + 1)}
-                                            disabled={pagination.currentPage === pagination.totalPages || isLoading}
-                                        >
-                                            Next
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
                         </>
                     )}
                 </div>

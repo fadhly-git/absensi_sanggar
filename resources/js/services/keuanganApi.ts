@@ -86,7 +86,7 @@ export const fetchTransactions = async (
 
 export const createTransaction = async (payload: NewTransactionPayload) => {
     try {
-        console.log('API: Creating transaction with payload:', payload);
+        // console.log('API: Creating transaction with payload:', payload);
 
         const { data } = await axios.post(BASE_URL, payload, {
             headers: {
@@ -95,7 +95,7 @@ export const createTransaction = async (payload: NewTransactionPayload) => {
             }
         });
 
-        console.log('API: Transaction created successfully:', data);
+        // console.log('API: Transaction created successfully:', data);
         return data;
     } catch (error: any) {
         console.error('API: Transaction creation failed:', {

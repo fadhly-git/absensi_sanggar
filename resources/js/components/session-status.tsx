@@ -74,11 +74,11 @@ export function SessionStatus({ className, showDetails = false }: SessionStatusP
         return (
             <div className={cn("flex items-center space-x-2", className)}>
                 <Icon className={cn("h-4 w-4", config.color)} />
-                <span className={cn("text-sm font-medium", config.color)}>
+                <span className={cn("text-sm font-medium hidden md:inline-block", config.color)}>
                     {remainingTime}
                 </span>
                 {isRemembered && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hidden sm:inline-block">
                         Extended
                     </span>
                 )}
@@ -114,7 +114,7 @@ export function SessionStatus({ className, showDetails = false }: SessionStatusP
                             </p>
                             <p>Remaining: {remainingTime}</p>
                             {sessionExpiry && (
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-gray-500 hidden sm:block">
                                     Expires: {new Date(sessionExpiry).toLocaleString()}
                                 </p>
                             )}
@@ -133,13 +133,13 @@ export function SessionStatus({ className, showDetails = false }: SessionStatusP
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-col space-y-2">
+                <div className="flex flex-col space-y-2 hover:cursor-pointer">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={checkSession}
                     >
-                        <RefreshCw className="h-4 w-4" />
+                        <RefreshCw className="h-4 w-4 hover:cursor-pointer" />
                     </Button>
                     {sessionStatus === 'expired' && (
                         <Button

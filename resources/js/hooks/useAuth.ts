@@ -48,7 +48,7 @@ export function useAuth(): UseAuthReturn {
             const response = await axios.get<SessionData>(route('api.check-session'));
             const data = response.data;
 
-            console.log('Session check response:', data); // Debug logging
+            // console.log('Session check response:', data); // Debug logging
 
             if (data.valid && data.user) {
                 setUser(data.user);
