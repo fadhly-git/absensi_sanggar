@@ -18,7 +18,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Dashboard() {
-    const { loading: authLoading, isAuthenticated, user } = useAuth();
+    const { loading: authLoading, isAuthenticated } = useAuth();
+
 
     // Mengambil semua data untuk dashboard dengan satu query
     const { data: summaryData, isLoading, error, refetch } = useQuery({
@@ -34,15 +35,6 @@ export default function Dashboard() {
             return failureCount < 3;
         },
         staleTime: 5 * 60 * 1000, // 5 minutes
-    });
-
-    console.log('Dashboard render state:', {
-        authLoading,
-        isAuthenticated,
-        user,
-        summaryData,
-        isLoading,
-        error: error?.message
     });
 
     // Show loading spinner jika auth masih loading
@@ -111,6 +103,7 @@ export default function Dashboard() {
                         {process.env.NODE_ENV === 'development' && (
                             <DebugAuth />
                         )}
+
                     </div>
                 </div>
             </div>
