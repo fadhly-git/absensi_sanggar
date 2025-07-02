@@ -30,6 +30,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('keuangan', function () {
             return Inertia::render('keuangan');
         })->name('atmin.keuangan');
+
+        Route::get('system/clear-cache', [App\Http\Controllers\SystemActionController::class, 'clearAllCache'])
+            ->name('atmin.system.clear-cache');
     });
 
 });

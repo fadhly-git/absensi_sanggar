@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { CircleDollarSignIcon, FileUser, FingerprintIcon, Layout } from 'lucide-react';
+import { CircleDollarSignIcon, DatabaseZap, FileUser, FingerprintIcon, Layout } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -26,6 +26,11 @@ const mainNavItems: NavItem[] = [
         title: 'keuangan',
         url: 'atmin.keuangan',
         icon: CircleDollarSignIcon,
+    },
+    {
+        title: 'System Cache Clear',
+        url: 'atmin.system.clear-cache',
+        icon: DatabaseZap,
     },
 ];
 
