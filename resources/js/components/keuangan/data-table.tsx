@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useCallback } from 'react';
 import {
     ColumnDef, flexRender, getCoreRowModel,
@@ -28,18 +29,18 @@ import {
     AlertDialogDescription,
 } from '@/components/ui/alert-dialog';
 
+// Helper: format number
+const formatNumber = (value: number) => {
+    if (value == null) return 'Rp 0';
+    return 'Rp ' + value.toLocaleString('id-ID');
+};
+
 export interface DataTableKeuanganProps {
     datas: DataKeuangan[];
     type: 'masuk' | 'keluar';
     isLoading: boolean;
 }
 
-const formatNumber = (value: number) => {
-    if (value == null) return 'Rp 0';
-    return 'Rp ' + value.toLocaleString('id-ID');
-};
-
-// Loading skeleton component
 const TableSkeleton = React.memo(() => (
     <>
         {Array.from({ length: 5 }).map((_, i) => (
@@ -68,7 +69,6 @@ export const DataTableKeuangan = React.memo(({
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-
     const deleteMutation = useMutation({
         mutationFn: deleteTransaction,
         onSuccess: (response) => {
@@ -76,19 +76,16 @@ export const DataTableKeuangan = React.memo(({
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['saldo'] });
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
             toast.error(error.message || 'Gagal menghapus data.');
         },
     });
 
-    // Ganti handleDelete agar buka dialog
     const handleDelete = useCallback((id: number) => {
         setDeleteId(id);
         setIsDeleteDialogOpen(true);
     }, []);
 
-    // Handler konfirmasi hapus
     const confirmDelete = useCallback(() => {
         if (deleteId !== null) {
             deleteMutation.mutate(deleteId);
@@ -153,17 +150,19 @@ export const DataTableKeuangan = React.memo(({
                     <Button
                         variant="outline"
                         size="sm"
+                        aria-label="Edit"
                         onClick={() => handleEdit(row.original)}
-                        className="h-8 w-8 p-0 hover:bg-blue-50"
+                        className="h-8 w-8 p-0 rounded-full focus:ring-2 focus:ring-blue-400"
                     >
                         <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                         variant="destructive"
                         size="sm"
+                        aria-label="Hapus"
                         onClick={() => handleDelete(row.original.id)}
                         disabled={deleteMutation.isPending}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 rounded-full focus:ring-2 focus:ring-red-400"
                     >
                         <Trash2 className="h-4 w-4" />
                     </Button>
@@ -191,7 +190,7 @@ export const DataTableKeuangan = React.memo(({
         [datas]
     );
 
-    console.log('Rendering DataTableKeuangan', { type, totalAmount, isLoading });
+    // --- Mobile Card View
 
     return (
         <div className="space-y-4">
@@ -235,7 +234,7 @@ export const DataTableKeuangan = React.memo(({
 
             {/* Filter & Summary */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div className="relative">
+                <div className="relative w-full sm:w-auto">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                         placeholder="Cari keterangan..."
@@ -254,8 +253,69 @@ export const DataTableKeuangan = React.memo(({
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="rounded-md border bg-white">
+            {/* Mobile Card Mode */}
+            <div className="block md:hidden space-y-3">
+                {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="rounded-xl border bg-white dark:bg-gray-900 px-4 py-4 shadow flex flex-col gap-2">
+                            <Skeleton className="h-4 w-1/2 mb-2" />
+                            <Skeleton className="h-3 w-2/3 mb-2" />
+                            <Skeleton className="h-4 w-1/3" />
+                        </div>
+                    ))
+                ) : (datas.length === 0 ? (
+                    <div className="rounded-xl border bg-white dark:bg-gray-900 px-4 py-6 text-center text-gray-400">
+                        Tidak ada data {type}
+                    </div>
+                ) : (
+                    datas.map((row) => (
+                        <div
+                            key={row.id}
+                            className="rounded-xl border bg-white dark:bg-gray-900 px-4 py-4 shadow flex flex-col gap-2"
+                        >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                                <div className="text-xs text-gray-400">Tanggal</div>
+                                <div className="font-bold text-right text-primary">
+                                    {new Date(row.tanggal).toLocaleDateString('id-ID')}
+                                </div>
+                            </div>
+                            <div className="text-xs text-gray-400">Keterangan</div>
+                            <div className="font-medium truncate">{row.keterangan}</div>
+                            <div className="flex items-center justify-between my-1">
+                                <div className="text-xs text-gray-400">Jumlah</div>
+                                <div className={`font-semibold ${type === 'masuk'
+                                    ? 'text-green-600'
+                                    : 'text-red-600'
+                                    }`}>
+                                    {formatNumber(row.jumlah)}
+                                </div>
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => handleEdit(row)}
+                                >
+                                    <Edit className="h-4 w-4 mr-1" /> Edit
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => handleDelete(row.id)}
+                                    disabled={deleteMutation.isPending}
+                                >
+                                    <Trash2 className="h-4 w-4 mr-1" /> Hapus
+                                </Button>
+                            </div>
+                        </div>
+                    ))
+                ))}
+            </div>
+
+            {/* DESKTOP TABLE */}
+            <div className="hidden md:block rounded-md border bg-white">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map(headerGroup => (
@@ -302,7 +362,7 @@ export const DataTableKeuangan = React.memo(({
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div className="text-sm text-gray-700">
                     Menampilkan {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} - {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} dari {table.getFilteredRowModel().rows.length} data
                 </div>

@@ -1,12 +1,4 @@
 import React from 'react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -73,119 +65,196 @@ export function SiswaTable({
         );
     }
 
+    // MOBILE: tampilkan sebagai card; DESKTOP: tetap tabel
     return (
-        <div className="bg-white rounded-lg border">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-12">
-                            <Checkbox
-                                checked={data.length > 0 && selectedIds.length === data.length}
-                                onCheckedChange={handleSelectAll}
-                                aria-label="Select all"
-                            />
-                        </TableHead>
-                        <TableHead>Nama & Alamat</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Statistik Absensi</TableHead>
-                        <TableHead>Terdaftar</TableHead>
-                        <TableHead className="w-16">Aksi</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data.length === 0 ? (
-                        <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                                Tidak ada data siswa
-                            </TableCell>
-                        </TableRow>
-                    ) : (
-                        data.map((siswa) => (
-                            <TableRow key={siswa.id}>
-                                <TableCell>
-                                    <Checkbox
-                                        checked={selectedIds.includes(siswa.id)}
-                                        onCheckedChange={(checked) =>
-                                            handleSelectItem(siswa.id, checked as boolean)
-                                        }
-                                        aria-label={`Select ${siswa.nama}`}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <div className="space-y-1">
+        <div className="w-full mx-auto container">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="w-12 px-2 py-3">
+                                <Checkbox
+                                    checked={data.length > 0 && selectedIds.length === data.length}
+                                    onCheckedChange={handleSelectAll}
+                                    aria-label="Select all"
+                                />
+                            </th>
+                            <th className="px-2 py-3 text-left">Nama & Alamat</th>
+                            <th className="px-2 py-3 text-left">Status</th>
+                            <th className="px-2 py-3 text-left">Statistik Absensi</th>
+                            <th className="px-2 py-3 text-left">Terdaftar</th>
+                            <th className="w-16 px-2 py-3 text-left">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                        {data.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="text-center py-8 text-gray-500">
+                                    Tidak ada data siswa
+                                </td>
+                            </tr>
+                        ) : (
+                            data.map((siswa) => (
+                                <tr key={siswa.id}>
+                                    <td className="px-2 py-2 align-top">
+                                        <Checkbox
+                                            checked={selectedIds.includes(siswa.id)}
+                                            onCheckedChange={(checked) =>
+                                                handleSelectItem(siswa.id, checked as boolean)
+                                            }
+                                            aria-label={`Select ${siswa.nama}`}
+                                        />
+                                    </td>
+                                    <td className="px-2 py-2 align-top">
                                         <div className="font-medium">{siswa.nama}</div>
                                         <div className="text-sm text-gray-500 flex items-start gap-1">
                                             <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
                                             <span className="line-clamp-2">{siswa.alamat}</span>
                                         </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge
-                                        variant={siswa.status ? "default" : "secondary"}
-                                        className={
-                                            siswa.status
-                                                ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                                : "bg-red-100 text-red-800 hover:bg-red-200"
-                                        }
-                                    >
-                                        {siswa.status ? 'Aktif' : 'Tidak Aktif'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="text-sm space-y-1">
-                                        {siswa.total_absensi !== undefined && (
-                                            <div className="text-gray-600">
-                                                Total: {siswa.total_absensi} kali
-                                            </div>
-                                        )}
-                                        {siswa.absensi_bulan_ini !== undefined && (
-                                            <div className="text-blue-600">
-                                                Bulan ini: {siswa.absensi_bulan_ini} kali
-                                            </div>
-                                        )}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="text-sm text-gray-500 flex items-center gap-1">
-                                        <Calendar className="h-3 w-3" />
-                                        {formatDistanceToNow(new Date(siswa.created_at), {
-                                            addSuffix: true,
-                                            locale: localeId
-                                        })}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm">
-                                                <MoreVertical className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => onView(siswa)}>
-                                                <Eye className="mr-2 h-4 w-4" />
-                                                Lihat Detail
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => onEdit(siswa)}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() => onDelete(siswa.id)}
-                                                className="text-red-600"
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Hapus
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
-                        ))
-                    )}
-                </TableBody>
-            </Table>
+                                    </td>
+                                    <td className="px-2 py-2 align-top">
+                                        <Badge
+                                            variant={siswa.status ? "default" : "secondary"}
+                                            className={
+                                                siswa.status
+                                                    ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                                    : "bg-red-100 text-red-800 hover:bg-red-200"
+                                            }
+                                        >
+                                            {siswa.status ? 'Aktif' : 'Tidak Aktif'}
+                                        </Badge>
+                                    </td>
+                                    <td className="px-2 py-2 align-top">
+                                        <div className="text-sm space-y-1">
+                                            {siswa.total_absensi !== undefined && (
+                                                <div className="text-gray-600">
+                                                    Total: {siswa.total_absensi} kali
+                                                </div>
+                                            )}
+                                            {siswa.absensi_bulan_ini !== undefined && (
+                                                <div className="text-blue-600">
+                                                    Bulan ini: {siswa.absensi_bulan_ini} kali
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-2 py-2 align-top">
+                                        <div className="text-sm text-gray-500 flex items-center gap-1">
+                                            <Calendar className="h-3 w-3" />
+                                            {formatDistanceToNow(new Date(siswa.created_at), {
+                                                addSuffix: true,
+                                                locale: localeId
+                                            })}
+                                        </div>
+                                    </td>
+                                    <td className="px-2 py-2 align-top">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="sm">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => onView(siswa)}>
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    Lihat Detail
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onEdit(siswa)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => onDelete(siswa.id)}
+                                                    className="text-red-600"
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Hapus
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-4 mx-auto">
+                {data.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 bg-white rounded-lg shadow">
+                        Tidak ada data siswa
+                    </div>
+                ) : data.map((siswa) => (
+                    <div
+                        key={siswa.id}
+                        className="bg-white rounded-lg shadow p-4 flex flex-col gap-2 relative"
+                    >
+                        <div className="absolute top-2 right-2">
+                            <Checkbox
+                                checked={selectedIds.includes(siswa.id)}
+                                onCheckedChange={(checked) =>
+                                    handleSelectItem(siswa.id, checked as boolean)
+                                }
+                                aria-label={`Select ${siswa.nama}`}
+                            />
+                        </div>
+                        <div>
+                            <span className="block text-xs text-gray-400">Nama</span>
+                            <span className="font-bold text-gray-700">{siswa.nama}</span>
+                        </div>
+                        <div>
+                            <span className="block text-xs text-gray-400">Alamat</span>
+                            <span className="text-gray-600 text-sm flex items-start gap-1">
+                                <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                <span className="line-clamp-2">{siswa.alamat}</span>
+                            </span>
+                        </div>
+                        <div>
+                            <span className="block text-xs text-gray-400">Status</span>
+                            <Badge
+                                variant={siswa.status ? "default" : "secondary"}
+                                className={
+                                    siswa.status
+                                        ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                        : "bg-red-100 text-red-800 hover:bg-red-200"
+                                }
+                            >
+                                {siswa.status ? 'Aktif' : 'Tidak Aktif'}
+                            </Badge>
+                        </div>
+                        <div>
+                            <span className="block text-xs text-gray-400">Statistik Absensi</span>
+                            <span className="text-gray-600 text-sm">
+                                Total: {siswa.total_absensi ?? "-"} | Bulan ini: {siswa.absensi_bulan_ini ?? "-"}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="block text-xs text-gray-400">Terdaftar</span>
+                            <span className="text-gray-500 text-sm flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatDistanceToNow(new Date(siswa.created_at), {
+                                    addSuffix: true,
+                                    locale: localeId
+                                })}
+                            </span>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-2">
+                            <Button variant="ghost" size="icon" onClick={() => onView(siswa)}>
+                                <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => onEdit(siswa)}>
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => onDelete(siswa.id)}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
