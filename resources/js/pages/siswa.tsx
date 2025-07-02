@@ -344,27 +344,29 @@ export default function SiswaPage() {
         );
     }
 
+    // ...existing code...
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Siswa" />
 
-            <div className="space-y-6">
+            <div className="space-y-6 w-full max-w-5xl mx-auto px-2 sm:px-4 md:px-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 w-full">
                     <div>
                         <h1 className="text-2xl font-bold">Manajemen Siswa</h1>
-                        <p className="text-gray-600 mt-1">
+                        <p className="text-gray-600 mt-1 text-sm sm:text-base">
                             Kelola data siswa sanggar - Total: {siswaData?.total || 0} siswa
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 sm:gap-4 w-full sm:w-auto">
                         {/* Refresh Button */}
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={handleRefresh}
                             disabled={isLoading}
+                            className="disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer w-full sm:w-auto"
                         >
                             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                             Refresh
@@ -374,11 +376,11 @@ export default function SiswaPage() {
                         {selectedIds.length > 0 && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" disabled={isAnyLoading}>
+                                    <Button variant="outline" disabled={isAnyLoading} className="w-full sm:w-auto">
                                         Aksi Massal ({selectedIds.length})
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent>
+                                <DropdownMenuContent className="w-48">
                                     <DropdownMenuItem onClick={() => handleBulkAction('activate')}>
                                         Aktifkan Semua
                                     </DropdownMenuItem>
@@ -400,12 +402,12 @@ export default function SiswaPage() {
                         {/* Import/Export */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
+                                <Button variant="outline" className="w-full sm:w-auto">
                                     <Download className="mr-2 h-4 w-4" />
                                     Export
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent>
+                            <DropdownMenuContent className="w-48">
                                 <DropdownMenuItem onClick={handleExportAll}>
                                     <Download className="mr-2 h-4 w-4" />
                                     Export Semua Data
@@ -430,6 +432,7 @@ export default function SiswaPage() {
                         <Button
                             onClick={() => setFormDialog({ open: true, siswa: null })}
                             disabled={isAnyLoading}
+                            className="w-full sm:w-auto"
                         >
                             <Plus className="mr-2 h-4 w-4" />
                             Tambah Siswa
@@ -440,26 +443,32 @@ export default function SiswaPage() {
                 {/* Stats */}
                 <SiswaStats />
 
-                {/* Filters */}
-                <SiswaFiltersComponent
-                    filters={filters}
-                    onFiltersChange={handleFiltersChange}
-                    onReset={handleResetFilters}
-                />
+                <div className="w-full">
+                    {/* Filters */}
+                    <div className="overflow-x-auto">
+                        <SiswaFiltersComponent
+                            filters={filters}
+                            onFiltersChange={handleFiltersChange}
+                            onReset={handleResetFilters}
+                        />
+                    </div>
+                </div>
 
-                {/* Table */}
-                <SiswaTable
-                    data={siswaData?.data || []}
-                    isLoading={isLoading}
-                    selectedIds={selectedIds}
-                    onSelectionChange={setSelectedIds}
-                    onEdit={(siswa) => setFormDialog({ open: true, siswa })}
-                    onDelete={(id) => setDeleteDialog({ open: true, id })}
-                    onView={(siswa) => toast.info(`Detail siswa: ${siswa.nama}`)}
-                />
+                <div className="w-full">
+                    {/* Table */}
+                    <SiswaTable
+                        data={siswaData?.data || []}
+                        isLoading={isLoading}
+                        selectedIds={selectedIds}
+                        onSelectionChange={setSelectedIds}
+                        onEdit={(siswa) => setFormDialog({ open: true, siswa })}
+                        onDelete={(id) => setDeleteDialog({ open: true, id })}
+                        onView={(siswa) => toast.info(`Detail siswa: ${siswa.nama}`)}
+                    />
+                </div>
 
                 {/* Pagination */}
-                {renderPagination()}
+                <div className="w-full">{renderPagination()}</div>
 
                 {/* Form Dialog */}
                 <SiswaFormDialog
@@ -475,7 +484,7 @@ export default function SiswaPage() {
                     open={deleteDialog.open}
                     onOpenChange={(open) => !isAnyLoading && setDeleteDialog({ open })}
                 >
-                    <AlertDialogContent>
+                    <AlertDialogContent className="max-w-full sm:max-w-md">
                         <AlertDialogHeader>
                             <AlertDialogTitle>Konfirmasi Hapus Siswa</AlertDialogTitle>
                             <AlertDialogDescription>
@@ -500,4 +509,5 @@ export default function SiswaPage() {
             </div>
         </AppLayout>
     );
+    // ...existing code...
 }

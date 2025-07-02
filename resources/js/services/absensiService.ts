@@ -53,7 +53,7 @@ export class AbsensiService {
     }>): Promise<any> {
         try {
 
-            console.log('Creating absensi with data:', data);
+            // console.log('Creating absensi with data:', data);
             const response = await apiClient.post(`${AbsensiService.baseUrl}`, { data });
 
             if (!response.data.success) {

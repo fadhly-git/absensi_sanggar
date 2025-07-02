@@ -20,17 +20,17 @@ export interface DashboardSummary {
  */
 export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
     try {
-        console.log('Fetching dashboard summary...');
-        console.log('Auth token from cookie:', getCookie('auth_token') ? 'Present' : 'Missing');
-        console.log('Session ID:', getCookie('laravel_session') ? 'Present' : 'Missing');
+        // console.log('Fetching dashboard summary...');
+        // console.log('Auth token from cookie:', getCookie('auth_token') ? 'Present' : 'Missing');
+        // console.log('Session ID:', getCookie('laravel_session') ? 'Present' : 'Missing');
 
         const { data } = await axios.get(route('api.admin.dashboard.summary'));
-        
-        console.log('Dashboard summary fetched successfully:', data);
+
+        // console.log('Dashboard summary fetched successfully:', data);
         return data;
     } catch (error: any) {
         console.error('Error fetching dashboard summary:', error);
-        
+
         // Enhanced error logging
         if (error.response) {
             console.error('Response data:', error.response.data);
@@ -43,7 +43,7 @@ export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
         } else {
             console.error('Error setting up request:', error.message);
         }
-        
+
         throw error;
     }
 };

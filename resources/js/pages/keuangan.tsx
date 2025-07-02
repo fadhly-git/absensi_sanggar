@@ -178,36 +178,70 @@ export default function Keuangan() {
     );
 }
 
-// --- Filter Bar with React.memo for performance
-const FilterBar = React.memo(({ isMonthMode, onModeChange, onDateChange }: {
+interface Props {
     isMonthMode: boolean;
     filter: FilterState;
     onModeChange: (checked: boolean) => void;
     onDateChange: (val: string) => void;
-}) => {
-    return (
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 w-full bg-white/80 backdrop-blur px-4 pt-4 pb-2 mb-2 rounded-b-lg shadow-sm sticky top-0 z-40">
-            <div className="flex flex-wrap items-center gap-3">
-                <span className="font-bold text-lg text-primary">Ringkasan Keuangan</span>
-                <span className="text-muted-foreground">|</span>
-                <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">Tahun</span>
-                    <Switch checked={isMonthMode} onCheckedChange={onModeChange} />
-                    <span className="font-medium text-sm">Bulan</span>
+}
+
+// --- Filter Bar with React.memo for performance
+const FilterBar = React.memo(
+    ({ isMonthMode, onModeChange, onDateChange }: Props) => {
+        return (
+            <div className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur border-b border-gray-100 dark:border-gray-800">
+                <div className="flex flex-col items-center gap-3 px-4 py-3">
+                    {/* Title & Mode */}
+                    <div className="flex flex-col items-center gap-2">
+                        <span className="font-bold text-base md:text-lg text-primary">
+                            Ringkasan Keuangan
+                        </span>
+                        <div className="flex items-center gap-1 md:gap-2 bg-gray-50 dark:bg-black/20 px-2 py-1 rounded-lg">
+                            <button
+                                type="button"
+                                className={`text-xs md:text-sm font-semibold px-2 py-0.5 rounded transition ${!isMonthMode
+                                    ? "bg-primary text-white"
+                                    : "text-gray-700 dark:text-gray-300"
+                                    }`}
+                                aria-pressed={!isMonthMode}
+                                tabIndex={0}
+                                onClick={() => onModeChange(false)}
+                            >
+                                Tahun
+                            </button>
+                            <Switch
+                                checked={isMonthMode}
+                                onCheckedChange={onModeChange}
+                                className="mx-1"
+                                aria-label="Pilih Bulan/Tahun"
+                            />
+                            <button
+                                type="button"
+                                className={`text-xs md:text-sm font-semibold px-2 py-0.5 rounded transition ${isMonthMode
+                                    ? "bg-primary text-white"
+                                    : "text-gray-700 dark:text-gray-300"
+                                    }`}
+                                aria-pressed={isMonthMode}
+                                tabIndex={0}
+                                onClick={() => onModeChange(true)}
+                            >
+                                Bulan
+                            </button>
+                        </div>
+                    </div>
+                    {/* Picker di bawah title & mode */}
+                    <div className="flex items-center gap-2 w-full justify-center">
+                        {isMonthMode ? (
+                            <CustomMonthPicker onMonthChange={onDateChange} />
+                        ) : (
+                            <CustomYearPicker onYearChange={onDateChange} />
+                        )}
+                    </div>
                 </div>
-                {isMonthMode ? (
-                    <CustomMonthPicker
-                        onMonthChange={onDateChange}
-                    />
-                ) : (
-                    <CustomYearPicker
-                        onYearChange={onDateChange}
-                    />
-                )}
             </div>
-        </div>
-    );
-});
+        );
+    }
+);
 
 // --- Table Wrapper with error handling
 type KeuanganTableWrapperProps = {

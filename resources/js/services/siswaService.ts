@@ -39,11 +39,11 @@ export class SiswaService {
 
     static async create(data: SiswaFormData): Promise<Siswa> {
         try {
-            console.log('Creating siswa with data:', data);
+            // console.log('Creating siswa with data:', data);
 
             const response = await apiClient.post<Siswa>(SiswaService.baseUrl, data);
 
-            console.log('Create response:', response.data);
+            // console.log('Create response:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error creating siswa:', error);
@@ -53,11 +53,11 @@ export class SiswaService {
 
     static async update(id: number, data: Partial<SiswaFormData>): Promise<Siswa> {
         try {
-            console.log('Updating siswa with id:', id, 'data:', data);
+            // console.log('Updating siswa with id:', id, 'data:', data);
 
             const response = await apiClient.put<Siswa>(`${SiswaService.baseUrl}/${id}`, data);
 
-            console.log('Update response:', response.data);
+            // console.log('Update response:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error updating siswa:', error);
@@ -67,11 +67,11 @@ export class SiswaService {
 
     static async delete(id: number): Promise<void> {
         try {
-            console.log('Deleting siswa with id:', id);
+            // console.log('Deleting siswa with id:', id);
 
             await apiClient.delete(`${SiswaService.baseUrl}/${id}`);
 
-            console.log('Delete successful for id:', id);
+            // console.log('Delete successful for id:', id);
         } catch (error) {
             console.error('Error deleting siswa:', error);
             throw error;
@@ -138,7 +138,7 @@ export class SiswaService {
             // URL yang benar untuk export
             const url = `${SiswaService.baseUrl}/export${params.toString() ? '?' + params.toString() : ''}`;
 
-            console.log('Exporting with URL:', url); // Debug log
+            // console.log('Exporting with URL:', url); // Debug log
 
             // Trigger download
             const response = await apiClient.get(url, {

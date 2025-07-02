@@ -60,7 +60,6 @@ const useTransactionForm = () => {
     return { fields, setFields, date, setDate, isOpen, setIsOpen, resetForm };
 };
 
-// Field management component
 const TransactionFieldInput = React.memo(({
     field,
     index,
@@ -76,37 +75,45 @@ const TransactionFieldInput = React.memo(({
     onRemove: (index: number) => void;
     canRemove: boolean;
 }) => (
-    <div className="flex items-end gap-2">
-        <div className="flex-1">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 mb-3 shadow-sm">
+        {/* Keterangan */}
+        <div className="flex items-center justify-between mb-1">
             <Label htmlFor={`keterangan-${type}-${index}`}>Keterangan</Label>
-            <Input
-                id={`keterangan-${type}-${index}`}
-                value={field.keterangan}
-                onChange={(e) => onChange(index, 'keterangan', e.target.value)}
-                placeholder="Masukkan keterangan"
-            />
+            {canRemove && (
+                <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    onClick={() => onRemove(index)}
+                    className="text-red-500 hover:bg-red-100"
+                    aria-label="Hapus field"
+                >
+                    <Trash2 className="h-5 w-5" />
+                </Button>
+            )}
         </div>
-        <div className="flex-1">
+        <Input
+            id={`keterangan-${type}-${index}`}
+            value={field.keterangan}
+            onChange={(e) => onChange(index, 'keterangan', e.target.value)}
+            placeholder="Masukkan keterangan"
+            autoComplete="off"
+            className="mb-3 bg-white"
+        />
+        {/* Jumlah */}
+        <div className="flex items-center justify-between mb-1">
             <Label htmlFor={`amount-${type}-${index}`}>Jumlah</Label>
-            <Input
-                id={`amount-${type}-${index}`}
-                value={field.displayAmount}
-                onChange={(e) => onChange(index, 'amount', e.target.value)}
-                placeholder="0"
-            />
         </div>
-        {canRemove && (
-            <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => onRemove(index)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                aria-label="Hapus field"
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
-        )}
+        <Input
+            id={`amount-${type}-${index}`}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={field.displayAmount}
+            onChange={(e) => onChange(index, 'amount', e.target.value)}
+            placeholder="0"
+            autoComplete="off"
+            className="bg-white"
+        />
     </div>
 ));
 
@@ -150,7 +157,7 @@ const TransactionTabContent = React.memo(({
                     type="button"
                     variant="outline"
                     onClick={onAddField}
-                    className="w-full"
+                    className="w-full hover:bg-gray-100 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer"
                 >
                     <Plus className="mr-2 h-4 w-4" />
                     Tambah Field
@@ -284,8 +291,8 @@ export function KeuanganTabs() {
             <DrawerContent>
                 <div className="mx-auto w-full max-w-2xl">
                     <DrawerHeader>
-                        <DrawerTitle>Tambah Data Keuangan</DrawerTitle>
-                        <DrawerDescription>
+                        <DrawerTitle className='w-full items-center flex justify-center text-lg'>Tambah Data Keuangan</DrawerTitle>
+                        <DrawerDescription className='text-center text-base text-muted-foreground'>
                             Pilih tab dan isi form untuk menambahkan transaksi keuangan
                         </DrawerDescription>
                     </DrawerHeader>
