@@ -14,8 +14,9 @@ class Siswa extends Model
 
     protected $fillable = [
         'nama',
-        'alamat', 
-        'status'
+        'alamat',
+        'status',
+        'tanggal_terdaftar',
     ];
 
     protected $casts = [

@@ -2,6 +2,7 @@ export interface Siswa {
     id: number;
     nama: string;
     alamat: string;
+    tanggal_terdaftar: string;
     status: boolean;
     status_text: string;
     total_absensi?: number;
