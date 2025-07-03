@@ -10,19 +10,20 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Fingerprint, Menu, Search } from 'lucide-react';
+import { Home, Menu } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
+import { ModeToggle } from './mode-toggle';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        url: 'atmin.dashboard',
-        icon: Fingerprint,
+        url: 'siswa.dashboard',
+        icon: Home,
     },
 ];
 
-const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
+const activeItemStyles = 'text-neutral-50 bg-accent-foreground dark:text-neutral-900';
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -46,18 +47,28 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             </SheetTrigger>
                             <SheetContent side="left" className="bg-sidebar flex h-full w-64 flex-col items-stretch justify-between">
                                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                                <SheetHeader className="flex justify-start text-left">
+                                <SheetHeader className="flex flex-row justify-start text-left">
                                     <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
+                                    <span className="ml-2 text-base font-semibold text-black dark:text-white">Sanggar Tari</span>
                                 </SheetHeader>
                                 <div className="flex h-full flex-1 flex-col space-y-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
                                         <div className="flex flex-col space-y-4">
-                                            {mainNavItems.map((item) => (
-                                                <Link key={item.title} href={item.url} className="flex items-center space-x-2 font-medium">
-                                                    {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
-                                                    <span>{item.title}</span>
-                                                </Link>
-                                            ))}
+                                            {mainNavItems.map((item) => {
+                                                return (
+                                                    <Link
+                                                        key={item.title}
+                                                        href={route(item.url)}
+                                                        className={cn(
+                                                            'flex items-center space-x-2 font-medium px-2 py-2 rounded',
+                                                            route(item.url).includes(page.url) && activeItemStyles,
+                                                        )}
+                                                    >
+                                                        {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
+                                                        <span>{item.title}</span>
+                                                    </Link>
+                                                )
+                                            })}
                                         </div>
 
                                         <div className="flex flex-col space-y-4"></div>
@@ -76,12 +87,12 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         <NavigationMenu className="flex h-full items-stretch">
                             <NavigationMenuList className="flex h-full items-stretch space-x-2">
                                 {mainNavItems.map((item, index) => (
-                                    <NavigationMenuItem key={index} className="relative flex h-full items-center">
+                                    <NavigationMenuItem key={index} className="relative flex h-full items-center" >
                                         <Link
                                             href={route(`${item.url}`)}
                                             className={cn(
                                                 navigationMenuTriggerStyle(),
-                                                page.url === item.url && activeItemStyles,
+                                                route(item.url).includes(page.url) && activeItemStyles,
                                                 'h-9 cursor-pointer px-3',
                                             )}
                                         >
@@ -99,9 +110,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
                     <div className="ml-auto flex items-center space-x-2">
                         <div className="relative flex items-center space-x-1">
-                            <Button variant="ghost" size="icon" className="group h-9 w-9 cursor-pointer">
-                                <Search className="!size-5 opacity-80 group-hover:opacity-100" />
-                            </Button>
+                            <ModeToggle />
                         </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

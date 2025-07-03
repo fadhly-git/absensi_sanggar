@@ -25,16 +25,24 @@ class ConfirmablePasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        if (! Auth::guard('web')->validate([
-            'email' => $request->user()->email,
-            'password' => $request->password,
-        ])) {
+        if (
+            !Auth::guard('web')->validate([
+                'email' => $request->user()->email,
+                'password' => $request->password,
+            ])
+        ) {
             throw ValidationException::withMessages([
                 'password' => __('auth.password'),
             ]);
         }
 
         $request->session()->put('auth.password_confirmed_at', time());
+
+        if (Auth::user()->role === 'siswa') {
+            return redirect()->intended(route('siswa.dashboard', absolute: false));
+        } else if (Auth::user()->role === 'admin' || Auth::user()->role === 'pengurus') {
+            return redirect()->intended(route('atmin.dashboard', absolute: false));
+        }
 
         return redirect()->intended(route('atmin.dashboard', absolute: false));
     }

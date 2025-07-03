@@ -190,6 +190,7 @@ export default function DaftarHadir() {
         return (siswaData || []).map((siswa: any): Siswa => ({
             id: siswa.id,
             nama: siswa.nama || '',
+            tanggal_terdaftar: siswa.tanggal_terdaftar || new Date().toISOString(),
             alamat: siswa.alamat || '',
             status: Boolean(siswa.status === 'active' || siswa.status === 1 || siswa.status === true),
             status_text: siswa.status_text || (siswa.status ? 'Aktif' : 'Tidak Aktif'),
