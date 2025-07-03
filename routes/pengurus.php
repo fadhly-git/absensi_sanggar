@@ -4,7 +4,7 @@ use App\Http\Controllers\AbsensiController as AC;
 use App\Http\Controllers\KeuanganController as KC;
 use Inertia\Inertia;
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin,pengurus'])->group(function () {
 
     Route::group(['prefix' => 'atmin'], function () {
         //export route definition
