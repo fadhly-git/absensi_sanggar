@@ -96,12 +96,12 @@ export function SessionStatus({ className, showDetails = false }: SessionStatusP
 
     return (
         <div className={cn(
-            "rounded-lg border p-4",
+            "rounded-lg border p-4 mx-auto dark:bg-gray-800 dark:border-gray-700",
             config.bgColor,
             config.borderColor,
             className
         )}>
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between dark:text-gray-200 mx-auto">
                 <div className="flex items-center space-x-3">
                     <Icon className={cn("h-5 w-5", config.color)} />
                     <div className="flex-1">

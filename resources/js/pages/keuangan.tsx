@@ -135,7 +135,7 @@ export default function Keuangan() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Keuangan" />
-            <div className="flex flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4 p-4 bg-background">
                 {/* Filter */}
                 <FilterBar
                     isMonthMode={isMonthMode}
@@ -145,7 +145,7 @@ export default function Keuangan() {
                 />
 
                 {/* Saldo & Action */}
-                <div className="border rounded-xl p-4 bg-white shadow-sm flex flex-col gap-2">
+                <div className="border rounded-xl p-4 bg-background shadow-sm flex flex-col gap-2">
                     <div className="flex flex-wrap justify-end gap-2 mb-2">
                         <ExportButtonFinancial date={filter.date} param={filter.mode} />
                         <KeuanganTabs />
@@ -157,7 +157,7 @@ export default function Keuangan() {
                 </div>
 
                 {/* Data Table */}
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2 bg-background">
                     <KeuanganTableWrapper
                         title="💰 Uang Masuk"
                         type="masuk"
@@ -189,7 +189,7 @@ interface Props {
 const FilterBar = React.memo(
     ({ isMonthMode, onModeChange, onDateChange }: Props) => {
         return (
-            <div className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur border-b border-gray-100 dark:border-gray-800">
+            <div className="sticky top-0 z-40 w-full bg-background backdrop-blur border-b border-gray-100 dark:border-gray-800">
                 <div className="flex flex-col items-center gap-3 px-4 py-3">
                     {/* Title & Mode */}
                     <div className="flex flex-col items-center gap-2">
@@ -200,7 +200,7 @@ const FilterBar = React.memo(
                             <button
                                 type="button"
                                 className={`text-xs md:text-sm font-semibold px-2 py-0.5 rounded transition ${!isMonthMode
-                                    ? "bg-primary text-white"
+                                    ? "bg-primary text-primary-foreground"
                                     : "text-gray-700 dark:text-gray-300"
                                     }`}
                                 aria-pressed={!isMonthMode}
@@ -218,7 +218,7 @@ const FilterBar = React.memo(
                             <button
                                 type="button"
                                 className={`text-xs md:text-sm font-semibold px-2 py-0.5 rounded transition ${isMonthMode
-                                    ? "bg-primary text-white"
+                                    ? "bg-primary text-primary-foreground"
                                     : "text-gray-700 dark:text-gray-300"
                                     }`}
                                 aria-pressed={isMonthMode}
@@ -263,8 +263,8 @@ const KeuanganTableWrapper = React.memo(({
     const safeData = Array.isArray(data) ? data : [];
 
     return (
-        <div className="border rounded-xl flex flex-col bg-white shadow-sm">
-            <div className="px-4 py-3 font-semibold text-lg border-b bg-gray-50 flex items-center justify-between">
+        <div className="border rounded-xl flex flex-col bg-background shadow-sm">
+            <div className="px-4 py-3 font-semibold text-lg border-b flex items-center justify-between">
                 <span>{title}</span>
                 {safeData.length > 0 && (
                     <span className="text-sm font-normal text-muted-foreground">

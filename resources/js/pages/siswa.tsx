@@ -349,9 +349,9 @@ export default function SiswaPage() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Siswa" />
 
-            <div className="space-y-6 w-full max-w-5xl mx-auto px-2 sm:px-4 md:px-8">
+            <div className="space-y-6 w-full mx-auto px-2 sm:px-4 md:px-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 w-full">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 w-full mt-2 sm:mt-4">
                     <div>
                         <h1 className="text-2xl font-bold">Manajemen Siswa</h1>
                         <p className="text-gray-600 mt-1 text-sm sm:text-base">

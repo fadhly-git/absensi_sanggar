@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,7 +20,7 @@ export function SiswaFiltersComponent({
     const hasActiveFilters = filters.search || filters.status !== 'all';
 
     return (
-        <div className="bg-white p-4 rounded-lg border space-y-4">
+        <div className="bg-white p-4 rounded-lg border space-y-4 dark:bg-background dark:border-gray-700">
             <div className="flex items-center justify-between">
                 <h3 className="font-medium flex items-center gap-2">
                     <Filter className="h-4 w-4" />
@@ -35,12 +36,12 @@ export function SiswaFiltersComponent({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-100" />
                     <Input
                         placeholder="Cari nama atau alamat..."
                         value={filters.search}
                         onChange={(e) => onFiltersChange({ search: e.target.value })}
-                        className="pl-10"
+                        className="pl-10 dark:bg-gray-700 dark:text-gray-100"
                     />
                 </div>
 
