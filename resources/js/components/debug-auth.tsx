@@ -51,7 +51,7 @@ export function DebugAuth() {
     };
 
     return (
-        <div className="bg-gray-100 p-4 rounded-lg mt-4">
+        <div className="bg-gray-100 p-4 rounded-lg mt-4 dark:bg-gray-800 mx-auto w-full">
             <h3 className="font-bold mb-2">Debug Authentication</h3>
 
             <Button onClick={checkAuth} disabled={loading} className="mb-4">

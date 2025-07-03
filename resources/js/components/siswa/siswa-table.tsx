@@ -67,30 +67,30 @@ export function SiswaTable({
 
     // MOBILE: tampilkan sebagai card; DESKTOP: tetap tabel
     return (
-        <div className="w-full mx-auto container">
+        <div className="w-full mx-auto container dark:bg-background">
             {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 bg-background">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="w-12 px-2 py-3">
+                            <th className="w-12 px-2 py-3 bg-background text-foreground">
                                 <Checkbox
                                     checked={data.length > 0 && selectedIds.length === data.length}
                                     onCheckedChange={handleSelectAll}
                                     aria-label="Select all"
                                 />
                             </th>
-                            <th className="px-2 py-3 text-left">Nama & Alamat</th>
-                            <th className="px-2 py-3 text-left">Status</th>
-                            <th className="px-2 py-3 text-left">Statistik Absensi</th>
-                            <th className="px-2 py-3 text-left">Terdaftar</th>
-                            <th className="w-16 px-2 py-3 text-left">Aksi</th>
+                            <th className="px-2 py-3 text-left bg-background text-foreground">Nama & Alamat</th>
+                            <th className="px-2 py-3 text-left bg-background text-foreground">Status</th>
+                            <th className="px-2 py-3 text-left bg-background text-foreground">Statistik Absensi</th>
+                            <th className="px-2 py-3 text-left bg-background text-foreground">Terdaftar</th>
+                            <th className="w-16 px-2 py-3 text-left bg-background text-foreground">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
+                    <tbody className="bg-background divide-y divide-gray-100 dark:divide-gray-700">
                         {data.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="text-center py-8 text-gray-500">
+                                <td colSpan={6} className="text-center py-8 bg-background text-foreground">
                                     Tidak ada data siswa
                                 </td>
                             </tr>

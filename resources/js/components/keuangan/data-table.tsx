@@ -111,7 +111,7 @@ export const DataTableKeuangan = React.memo(({
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                    className="hover:bg-gray-100"
+                    className="hover:bg-muted-foreground"
                 >
                     Tanggal
                     <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -315,11 +315,11 @@ export const DataTableKeuangan = React.memo(({
             </div>
 
             {/* DESKTOP TABLE */}
-            <div className="hidden md:block rounded-md border bg-white">
+            <div className="hidden md:block rounded-md border bg-background">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map(headerGroup => (
-                            <TableRow key={headerGroup.id} className="bg-gray-50">
+                            <TableRow key={headerGroup.id} className="bg-background">
                                 {headerGroup.headers.map(header => (
                                     <TableHead key={header.id}>
                                         {header.isPlaceholder
@@ -338,7 +338,7 @@ export const DataTableKeuangan = React.memo(({
                             table.getRowModel().rows.map(row => (
                                 <TableRow
                                     key={row.id}
-                                    className="hover:bg-gray-50 transition-colors"
+                                    className="hover:bg-muted-foreground transition-colors"
                                 >
                                     {row.getVisibleCells().map(cell => (
                                         <TableCell key={cell.id}>
@@ -351,7 +351,7 @@ export const DataTableKeuangan = React.memo(({
                             <TableRow>
                                 <TableCell
                                     colSpan={columns.length}
-                                    className="h-24 text-center text-gray-500"
+                                    className="h-24 text-center text-foreground"
                                 >
                                     Tidak ada data {type}
                                 </TableCell>
