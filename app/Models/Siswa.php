@@ -34,6 +34,11 @@ class Siswa extends Model
         'status_text'
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Scope untuk siswa aktif
      */

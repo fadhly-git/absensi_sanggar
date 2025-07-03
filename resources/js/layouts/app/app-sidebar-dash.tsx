@@ -13,12 +13,12 @@ interface AppSidebarLayoutProps extends PropsWithChildren {
 
 interface FlashProps {
     success?: string;
-    errors?: string | string[];
+    error?: string | string[];
 }
 
 export default function AppSidebarLayout({ children, breadcrumbs = [] }: AppSidebarLayoutProps) {
     const { props } = usePage();
-    const { success, errors } = (props.flash ?? {}) as FlashProps;
+    const { success, error } = (props.flash ?? {}) as FlashProps;
 
     useEffect(() => {
         if (success) {
@@ -31,8 +31,8 @@ export default function AppSidebarLayout({ children, breadcrumbs = [] }: AppSide
                 },
             });
         }
-        if (errors) {
-            const errorMessage = Array.isArray(errors) ? errors.join(', ') : errors;
+        if (error) {
+            const errorMessage = Array.isArray(error) ? error.join(', ') : error;
             toast.error(errorMessage, {
                 duration: 5000,
                 icon: '❌',
@@ -43,7 +43,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [] }: AppSide
             });
         }
 
-    }, [success, errors]);
+    }, [success, error]);
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
