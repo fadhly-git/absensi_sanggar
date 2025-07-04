@@ -30,6 +30,10 @@ if (app()->environment('local')) {
     })->middleware('auth');
 }
 
+if (env('APP_ENV') != 'local') {
+    URL::forceScheme('https');
+}
+
 require __DIR__ . '/pengurus.php';
 require __DIR__ . '/siswa.php';
 require __DIR__ . '/settings.php';
