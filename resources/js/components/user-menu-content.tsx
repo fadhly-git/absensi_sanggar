@@ -2,7 +2,7 @@ import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSep
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { type User } from '@/types';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { LogOut, Settings, UserRoundPlus } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { Button } from './ui/button';
@@ -13,17 +13,17 @@ interface UserMenuContentProps {
 
 export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
+    const { props } = usePage() as { props: { csrfToken: string } };
 
     const logout = () => {
-        console.log('Logging out...');
         router.post(
             route('logout'),
-            {},
+            {
+                _token: props.csrfToken,
+            },
             {
                 onSuccess: () => {
-                    // Bersihkan token dari localStorage (jika ada)
                     localStorage.removeItem('token');
-                    console.log('Logged out successfully');
                 },
                 onError: (error) => {
                     console.error('Logout failed:', error);
@@ -49,15 +49,19 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                 </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                    <Link className="block w-full" href={route('register')} as="button" prefetch onClick={cleanup}>
-                        <UserRoundPlus className="mr-2" />
-                        Register
-                    </Link>
-                </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+            {(user.role === 'admin' || user.role === 'pengurus') && (
+                <>
+                    <DropdownMenuGroup>
+                        <DropdownMenuItem asChild>
+                            <Link className="block w-full" href={route('register')} as="button" prefetch onClick={cleanup}>
+                                <UserRoundPlus className="mr-2" />
+                                Register
+                            </Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                </>
+            )}
             <DropdownMenuItem asChild>
                 <Button className="flex justify-start w-full" onClick={() => { cleanup(); logout(); }}>
                     <LogOut className="mr-2" />

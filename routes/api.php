@@ -22,7 +22,7 @@ Route::get('/absensi/weekly-report', [AbsensiController::class, 'generateWeeklyR
     ->name('api.absensi.weekly-report');
 
 // Admin API - PENTING: gunakan middleware yang konsisten
-Route::prefix('admin')->middleware(['web', 'auth'])->group(function () {
+Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
     // Dashboard
     Route::get('/dashboard/summary', [DashboardController::class, 'getSummary'])
         ->name('api.admin.dashboard.summary');

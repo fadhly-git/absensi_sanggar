@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -16,6 +17,11 @@ Route::middleware('auth')->group(function () {
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
 
     Route::get('settings/appearance', function () {
-        return Inertia::render('settings/appearance');
+        if (Auth::user()->role === 'siswa') {
+            return Inertia::render('student/settings/appearance');
+        } else if (Auth::user()->role === 'admin' || Auth::user()->role === 'pengurus') {
+            return Inertia::render('settings/appearance');
+        }
+        return Inertia::render('student/landing-page');
     })->name('appearance');
 });

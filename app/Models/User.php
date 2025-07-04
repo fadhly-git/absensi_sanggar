@@ -47,7 +47,13 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    public function rotateToken() {
+    public function siswas()
+    {
+        return $this->hasOne(Siswa::class, 'user_id');
+    }
+
+    public function rotateToken()
+    {
         $this->tokens()->delete(); // Delete existing tokens
         return $this->createToken('auth_token')->plainTextToken; // Generate new token
     }
