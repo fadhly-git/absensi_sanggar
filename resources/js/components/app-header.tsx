@@ -10,7 +10,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Home, Menu } from 'lucide-react';
+import { Fingerprint, Home, Menu, QrCode } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 import { ModeToggle } from './mode-toggle';
@@ -21,6 +21,16 @@ const mainNavItems: NavItem[] = [
         url: 'siswa.dashboard',
         icon: Home,
     },
+    {
+        title: 'Presensi',
+        url: 'siswa.absensi',
+        icon: Fingerprint,
+    },
+    {
+        title: 'QR Code',
+        url: 'siswa.qr-code',
+        icon: QrCode,
+    }
 ];
 
 const activeItemStyles = 'text-neutral-50 bg-accent-foreground dark:text-neutral-900';
