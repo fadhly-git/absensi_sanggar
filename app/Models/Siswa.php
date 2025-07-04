@@ -14,8 +14,9 @@ class Siswa extends Model
 
     protected $fillable = [
         'nama',
-        'alamat', 
-        'status'
+        'alamat',
+        'status',
+        'tanggal_terdaftar',
     ];
 
     protected $casts = [
@@ -32,6 +33,11 @@ class Siswa extends Model
     protected $appends = [
         'status_text'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * Scope untuk siswa aktif

@@ -1,18 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-Route::redirect('/', '/absensi', 301);
+Route::get('/', function () {
+    return Inertia::render('student/landing-page');
+});
+
+
 // Route::get('/absensi', [lp::class,'index'])->name('home');
 Route::get('/absensi', function () {
     return Inertia::render('welcome');
 })->name('home');
-
-Route::get('temp', function () {
-    return Inertia::render('temp/index');
-})->name('temp');
 
 // Debug route (hanya untuk development)
 if (app()->environment('local')) {
@@ -30,6 +30,7 @@ if (app()->environment('local')) {
     })->middleware('auth');
 }
 
-require __DIR__.'/pengurus.php';
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
+require __DIR__ . '/pengurus.php';
+require __DIR__ . '/siswa.php';
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';

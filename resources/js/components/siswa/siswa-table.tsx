@@ -142,7 +142,7 @@ export function SiswaTable({
                                     <td className="px-2 py-2 align-top">
                                         <div className="text-sm text-gray-500 flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
-                                            {formatDistanceToNow(new Date(siswa.created_at), {
+                                            {formatDistanceToNow(new Date(siswa.tanggal_terdaftar), {
                                                 addSuffix: true,
                                                 locale: localeId
                                             })}

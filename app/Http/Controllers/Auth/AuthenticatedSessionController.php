@@ -19,8 +19,25 @@ class AuthenticatedSessionController extends Controller
     /**
      * Show the login page.
      */
-    public function create(Request $request): Response
+    public function create(Request $request)
     {
+        Log::info('Login page accessed', [
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'session_id' => $request->session()->getId(),
+        ]);
+        $user = Auth::user();
+        // Jika sudah login, redirect ke halaman dashboard yang sesuai
+        if ($user) {
+            if ($user->role === 'siswa') {
+                return redirect()->route('siswa.dashboard');
+            } else if ($user->role === 'admin' || $user->role === 'pengurus') {
+                return redirect()->route('atmin.dashboard');
+            } else if ($user->role === '') {
+                return redirect()->route('/');
+            }
+        }
+        // Jika belum login, tampilkan halaman login
         return Inertia::render('auth/login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => $request->session()->get('status'),
@@ -64,24 +81,35 @@ class AuthenticatedSessionController extends Controller
         $request->session()->put('is_remembered', $remember);
         $request->session()->put('login_time', now()->toISOString());
 
-        // Log::info("User {$user->id} logged in", [
-        //     'remember' => $remember ? 'Yes (7 days)' : 'No (2 hours)',
-        //     'expires_at' => $expiresAt->toISOString(),
-        //     'session_lifetime_minutes' => $sessionLifetime
-        // ]);
+        if ($user->role === 'siswa') {
+            // Redirect ke halaman dashboard siswa
+            return redirect()
+                ->route('siswa.dashboard')
+                ->withCookie(cookie(
+                    'auth_token',
+                    $token,
+                    $sessionLifetime, // dalam menit
+                    '/',
+                    env('SESSION_DOMAIN', null),
+                    false, // secure = false untuk development
+                    false  // httpOnly = false agar bisa diakses JS
+                ));
+        } else if ($user->role === 'admin' || $user->role === 'pengurus') {
+            // Redirect ke halaman dashboard admin atau pengurus
+            return redirect()
+                ->route('atmin.dashboard')
+                ->withCookie(cookie(
+                    'auth_token',
+                    $token,
+                    $sessionLifetime, // dalam menit
+                    '/',
+                    env('SESSION_DOMAIN', null),
+                    false, // secure = false untuk development
+                    false  // httpOnly = false agar bisa diakses JS
+                ));
+        }
+        return redirect('/');
 
-        // Redirect ke halaman dashboard dengan token sebagai cookie
-        return redirect()
-            ->route('atmin.dashboard')
-            ->withCookie(cookie(
-                'auth_token',
-                $token,
-                $sessionLifetime, // dalam menit
-                '/',
-                null,
-                false, // secure = false untuk development
-                false  // httpOnly = false agar bisa diakses JS
-            ));
     }
 
     /**

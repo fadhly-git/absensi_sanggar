@@ -1,7 +1,17 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from '@inertiajs/react';
-import { type PropsWithChildren } from 'react';
+import { Link, usePage } from '@inertiajs/react';
+import { useEffect, type PropsWithChildren } from 'react';
+import { toast } from 'sonner';
+
+interface ErrorsProps {
+    token?: string | string[];
+}
+
+interface FlashProps {
+    errors?: ErrorsProps;
+    message?: string;
+}
 
 export default function AuthCardLayout({
     children,
@@ -12,6 +22,30 @@ export default function AuthCardLayout({
     title?: string;
     description?: string;
 }>) {
+    const { props } = usePage();
+    const { errors, message } = (props.flash ?? {}) as FlashProps;
+    useEffect(() => {
+        if (errors?.token) {
+            const errorMessage = Array.isArray(errors?.token) ? errors.token.join(', ') : errors?.token;
+            toast.error(errorMessage, {
+                duration: 5000,
+                icon: '❌',
+                style: {
+                    background: '#f8d7da',
+                    color: '#721c24',
+                },
+            });
+        } else if (message) {
+            toast.info(message, {
+                duration: 5000,
+                icon: '🔔',
+                style: {
+                    background: '#f0f4f8',
+                    color: '#333',
+                },
+            });
+        }
+    }, [errors?.token, message]);
     return (
         <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div className="flex w-full max-w-md flex-col gap-6">
