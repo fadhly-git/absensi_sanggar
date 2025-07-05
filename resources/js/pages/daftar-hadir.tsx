@@ -313,7 +313,7 @@ export default function DaftarHadir() {
                 </div>
 
                 {/* Data Table */}
-                <div className="flex-1 flex flex-col gap-4 rounded-xl container">
+                <div className="flex-1 flex flex-col gap-4 rounded-xl container justify-center items-center w-full">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-12">
                             <LoadingSpinner />

@@ -4,22 +4,21 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { LoaderCircle, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-
 import { DatePicker } from '@/components/costum-date-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import {
-    Drawer,
-    DrawerContent,
-    DrawerDescription,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger
-} from '@/components/ui/drawer';
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
+} from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { createTransaction, type NewTransactionPayload } from '@/services/keuanganApi';
+import { DialogDescription } from '@radix-ui/react-dialog';
 
 // Types
 interface TransactionField {
@@ -75,7 +74,7 @@ const TransactionFieldInput = React.memo(({
     onRemove: (index: number) => void;
     canRemove: boolean;
 }) => (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 mb-3 shadow-sm">
+    <div className="bg-background border border-yellow-400 rounded-xl p-4 mb-3 shadow-sm">
         {/* Keterangan */}
         <div className="flex items-center justify-between mb-1">
             <Label htmlFor={`keterangan-${type}-${index}`}>Keterangan</Label>
@@ -97,8 +96,8 @@ const TransactionFieldInput = React.memo(({
             value={field.keterangan}
             onChange={(e) => onChange(index, 'keterangan', e.target.value)}
             placeholder="Masukkan keterangan"
-            autoComplete="off"
-            className="mb-3 bg-white"
+            autoComplete="on"
+            className="mb-3 "
         />
         {/* Jumlah */}
         <div className="flex items-center justify-between mb-1">
@@ -112,7 +111,6 @@ const TransactionFieldInput = React.memo(({
             onChange={(e) => onChange(index, 'amount', e.target.value)}
             placeholder="0"
             autoComplete="off"
-            className="bg-white"
         />
     </div>
 ));
@@ -140,7 +138,7 @@ const TransactionTabContent = React.memo(({
     const buttonColor = type === 'masuk' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700';
 
     return (
-        <TabsContent value={type} className="mt-0">
+        <TabsContent value={type} className="mt-0 bg-background">
             <CardContent className="space-y-4">
                 {fields.map((field, index) => (
                     <TransactionFieldInput
@@ -275,27 +273,27 @@ export function KeuanganTabs() {
             }))
         };
 
-        console.log('Submitting payload:', payload);
+        // console.log('Submitting payload:', payload);
         mutation.mutate(payload);
     }, [fields, date, mutation]);
 
     return (
-        <Drawer open={isOpen} onOpenChange={setIsOpen}>
-            <DrawerTrigger asChild>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
                 <Button>
                     <Plus className="mr-2 h-4 w-4" />
                     Tambah Data
                 </Button>
-            </DrawerTrigger>
+            </DialogTrigger>
 
-            <DrawerContent>
+            <DialogContent className="!max-w-5xl h-fit w-full">
                 <div className="mx-auto w-full max-w-2xl">
-                    <DrawerHeader>
-                        <DrawerTitle className='w-full items-center flex justify-center text-lg'>Tambah Data Keuangan</DrawerTitle>
-                        <DrawerDescription className='text-center text-base text-muted-foreground'>
+                    <DialogHeader>
+                        <DialogTitle className='w-full items-center flex justify-center text-lg'>Tambah Data Keuangan</DialogTitle>
+                        <DialogDescription className='text-center text-base text-muted-foreground'>
                             Pilih tab dan isi form untuk menambahkan transaksi keuangan
-                        </DrawerDescription>
-                    </DrawerHeader>
+                        </DialogDescription>
+                    </DialogHeader>
 
                     <div className="p-4 pb-8">
                         <Tabs defaultValue="masuk" className="w-full">
@@ -344,7 +342,7 @@ export function KeuanganTabs() {
                         </Tabs>
                     </div>
                 </div>
-            </DrawerContent>
-        </Drawer>
+            </DialogContent>
+        </Dialog>
     );
 }

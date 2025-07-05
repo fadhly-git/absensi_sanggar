@@ -11,20 +11,13 @@ class CheckTokenValidity
 {
     public function handle(Request $request, Closure $next)
     {
-        $user = Auth::user();
-
-        if ($user && method_exists($user, 'currentAccessToken')) {
-            $currentToken = $user->currentAccessToken();
-
-            // Hanya cek expired jika token bukan TransientToken
-            if ($currentToken && !($currentToken instanceof TransientToken)) {
-                if ($currentToken->expires_at && $currentToken->expires_at->isPast()) {
-                    Auth::logout();
-                    $request->session()->invalidate();
-                    $request->session()->regenerateToken();
-                    return redirect()->route('login')->withErrors(['token' => 'Session expired, please login again.']);
-                }
-            }
+        // Cek session expiry di session
+        $expiresAt = $request->session()->get('session_expires_at');
+        if ($expiresAt && now()->greaterThan(\Carbon\Carbon::parse($expiresAt))) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->withErrors(['token' => 'Session expired, please login again.']);
         }
 
         return $next($request);

@@ -184,13 +184,13 @@ export function SiswaTable({
             {/* Mobile cards */}
             <div className="md:hidden space-y-4 mx-auto">
                 {data.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500 bg-white rounded-lg shadow">
+                    <div className="text-center py-8 text-gray-500 bg-white dark:bg-gray-900 rounded-lg shadow">
                         Tidak ada data siswa
                     </div>
                 ) : data.map((siswa) => (
                     <div
                         key={siswa.id}
-                        className="bg-white rounded-lg shadow p-4 flex flex-col gap-2 relative"
+                        className="bg-white dark:bg-gray-900 rounded-lg shadow p-4 flex flex-col gap-2 relative"
                     >
                         <div className="absolute top-2 right-2">
                             <Checkbox
@@ -202,38 +202,38 @@ export function SiswaTable({
                             />
                         </div>
                         <div>
-                            <span className="block text-xs text-gray-400">Nama</span>
-                            <span className="font-bold text-gray-700">{siswa.nama}</span>
+                            <span className="block text-xs text-gray-400 dark:text-gray-300">Nama</span>
+                            <span className="font-bold text-gray-700 dark:text-gray-100">{siswa.nama}</span>
                         </div>
                         <div>
-                            <span className="block text-xs text-gray-400">Alamat</span>
-                            <span className="text-gray-600 text-sm flex items-start gap-1">
+                            <span className="block text-xs text-gray-400 dark:text-gray-300">Alamat</span>
+                            <span className="text-gray-600 dark:text-gray-200 text-sm flex items-start gap-1">
                                 <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
                                 <span className="line-clamp-2">{siswa.alamat}</span>
                             </span>
                         </div>
                         <div>
-                            <span className="block text-xs text-gray-400">Status</span>
+                            <span className="block text-xs text-gray-400 dark:text-gray-300">Status</span>
                             <Badge
                                 variant={siswa.status ? "default" : "secondary"}
                                 className={
                                     siswa.status
-                                        ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                        : "bg-red-100 text-red-800 hover:bg-red-200"
+                                        ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 hover:bg-green-200"
+                                        : "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 hover:bg-red-200"
                                 }
                             >
                                 {siswa.status ? 'Aktif' : 'Tidak Aktif'}
                             </Badge>
                         </div>
                         <div>
-                            <span className="block text-xs text-gray-400">Statistik Absensi</span>
-                            <span className="text-gray-600 text-sm">
+                            <span className="block text-xs text-gray-400 dark:text-gray-300">Statistik Absensi</span>
+                            <span className="text-gray-600 dark:text-gray-200 text-sm">
                                 Total: {siswa.total_absensi ?? "-"} | Bulan ini: {siswa.absensi_bulan_ini ?? "-"}
                             </span>
                         </div>
                         <div>
-                            <span className="block text-xs text-gray-400">Terdaftar</span>
-                            <span className="text-gray-500 text-sm flex items-center gap-1">
+                            <span className="block text-xs text-gray-400 dark:text-gray-300">Terdaftar</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
                                 {formatDistanceToNow(new Date(siswa.created_at), {
                                     addSuffix: true,

@@ -144,7 +144,9 @@ export const AbsensiWeeklyTable: React.FC<Props> = ({
     };
 
     const sortedData = [...data].sort((a, b) => {
-        const comparison = a.siswa_nama.localeCompare(b.siswa_nama);
+        const nameA = a.siswa_nama ?? '';
+        const nameB = b.siswa_nama ?? '';
+        const comparison = nameA.localeCompare(nameB);
         return sortOrder === 'asc' ? comparison : -comparison;
     });
 

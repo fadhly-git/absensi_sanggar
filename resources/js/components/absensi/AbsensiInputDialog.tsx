@@ -79,7 +79,7 @@ export function AbsensiInputDialog({
 
     return (
         <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-            <DialogContent className="!max-w-5xl h-full w-full">
+            <DialogContent className="!max-w-5xl h-fit max-h-screen w-full">
                 <DialogHeader>
                     <DialogTitle>Tambah Absensi Siswa</DialogTitle>
                 </DialogHeader>
@@ -138,7 +138,7 @@ export function AbsensiInputDialog({
                     <div className="font-medium text-base mb-1 text-primary">
                         Daftar Siswa Akan Diabsen
                     </div>
-                    <div className="max-h-44 overflow-auto">
+                    <div className="max-h-24 md:max-h-44 overflow-auto">
                         {selected.length === 0 ? (
                             <div className="text-center text-gray-400 py-6 text-base">
                                 Belum ada siswa dipilih.
@@ -203,7 +203,7 @@ export function AbsensiInputDialog({
                     <Button
                         onClick={handleSubmit}
                         disabled={selected.length === 0 || !tanggal}
-                        className="bg-primary hover:bg-primary/90 text-white hover:cursor-pointer"
+                        className="bg-primary hover:bg-primary/90 hover:cursor-pointer"
                     >
                         Simpan
                     </Button>

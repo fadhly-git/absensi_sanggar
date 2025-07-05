@@ -21,17 +21,12 @@ class AbsensiReportService
         int $limit = 20,
         ?string $search = null
     ): LengthAwarePaginator {
-
         $cacheKey = "weekly_report_" . md5($periode . $mode . $page . $limit . ($search ?? ''));
-
         return Cache::tags(['absensi', 'report'])->remember($cacheKey, 300, function () use ($periode, $mode, $page, $limit, $search) {
             return $this->buildOptimizedQuery($periode, $mode, $page, $limit, $search);
         });
     }
 
-    /**
-     * Optimized query builder
-     */
     private function buildOptimizedQuery(
         string $periode,
         string $mode,
@@ -39,7 +34,6 @@ class AbsensiReportService
         int $limit,
         ?string $search
     ): LengthAwarePaginator {
-
         [$startDate, $endDate] = $this->getDateRange($periode, $mode);
         $sundays = $this->getSundaysInRange($startDate, $endDate);
 
@@ -47,38 +41,35 @@ class AbsensiReportService
             return new LengthAwarePaginator([], 0, $limit, $page);
         }
 
-        // Optimized base query
+        // Query siswa + join user
         $baseQuery = DB::table('siswas as s')
+            ->leftJoin('users as u', 's.user_id', '=', 'u.id')
             ->select([
                 's.id as siswa_id',
-                's.nama as siswa_nama',
+                'u.name as siswa_nama',
+                'u.name as user_name',
                 's.alamat as siswa_alamat',
                 's.status as siswa_status'
             ])
             ->whereNull('s.deleted_at')
             ->where('s.status', 1);
 
-        // Apply search filter
         if ($search) {
             $baseQuery->where(function ($q) use ($search) {
-                $q->where('s.nama', 'like', "%{$search}%")
+                $q->where('u.name', 'like', "%{$search}%")
+                    ->orWhere('s.nama', 'like', "%{$search}%")
                     ->orWhere('s.alamat', 'like', "%{$search}%");
             });
         }
 
-        // Get total count for pagination
-        $totalQuery = clone $baseQuery;
-        $total = $totalQuery->count();
-
-        // Get paginated siswa
+        $total = (clone $baseQuery)->count();
         $offset = ($page - 1) * $limit;
         $siswaData = $baseQuery->skip($offset)->take($limit)->get();
 
-        // Ambil hanya id siswa yang ada di halaman ini
         $siswaIds = $siswaData->pluck('siswa_id')->toArray();
 
-        // Ambil absensi hanya untuk siswa di halaman ini
-        $attendanceSubquery = DB::table('absensis as a')
+        // Ambil absensi untuk siswa di halaman ini
+        $attendanceData = DB::table('absensis as a')
             ->select([
                 'a.id_siswa',
                 'a.tanggal',
@@ -86,25 +77,24 @@ class AbsensiReportService
             ])
             ->whereBetween('a.tanggal', [$startDate, $endDate])
             ->whereIn('a.tanggal', $sundays)
-            ->whereIn('a.id_siswa', $siswaIds);
+            ->whereIn('a.id_siswa', $siswaIds)
+            ->get()
+            ->groupBy('id_siswa');
 
-        // Create pivot table for attendance
-        $attendanceData = $attendanceSubquery->get()->groupBy('id_siswa');
-
-        // Merge attendance data with siswa data
+        // Merge absensi ke siswa
         $results = $siswaData->map(function ($siswa) use ($attendanceData, $sundays) {
             $siswaAttendance = $attendanceData->get($siswa->siswa_id, collect());
-
+            $absensi = [];
             foreach ($sundays as $sunday) {
                 $attendance = $siswaAttendance->firstWhere('tanggal', $sunday);
-                $siswa->{$sunday} = $attendance ? $attendance->status : 'T';
+                $absensi[$sunday] = $attendance ? $attendance->status : 'T';
             }
-
+            $siswa->absensi = $absensi;
             return $siswa;
         });
 
         return new LengthAwarePaginator(
-            $results->toArray(),
+            $results,
             $total,
             $limit,
             $page,
@@ -114,6 +104,11 @@ class AbsensiReportService
             ]
         );
     }
+
+    /**
+     * Optimized query builder
+     */
+
 
     /**
      * Get attendance count dengan optimasi

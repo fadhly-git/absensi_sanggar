@@ -162,24 +162,29 @@ class SiswaController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Siswa::query();
+            $query = Siswa::with(['user', 'absensis'])
+                ->leftJoin('users', 'siswas.user_id', '=', 'users.id')
+                ->select([
+                    'siswas.*',
+                    'users.name as nama_user'
+                ]);
 
             if ($request->filled('search')) {
                 $searchTerm = $request->search;
                 $query->where(function ($q) use ($searchTerm) {
-                    $q->where('nama', 'like', "%{$searchTerm}%")
-                        ->orWhere('alamat', 'like', "%{$searchTerm}%");
+                    $q->where('users.name', 'like', "%{$searchTerm}%")
+                        ->orWhere('siswas.alamat', 'like', "%{$searchTerm}%");
                 });
             }
 
             if ($request->filled('status') && $request->status !== 'all') {
                 $status = $request->status === '1' ? true : false;
-                $query->where('status', $status);
+                $query->where('siswas.status', $status);
             }
 
-            $sortBy = $request->get('sortBy', 'nama');
+            $sortBy = $request->get('sortBy', 'nama_user');
             $sortOrder = $request->get('sortOrder', 'asc');
-            $allowedSortFields = ['nama', 'alamat', 'created_at', 'status'];
+            $allowedSortFields = ['nama_user', 'alamat', 'created_at', 'status'];
             if (in_array($sortBy, $allowedSortFields)) {
                 $query->orderBy($sortBy, $sortOrder);
             }
@@ -187,12 +192,24 @@ class SiswaController extends Controller
             $perPage = min($request->get('per_page', 10), 100);
             $siswa = $query->paginate($perPage);
 
-            return SiswaResource::collection($siswa);
+            // Agar resource tetap konsisten, tambahkan eager load relasi user
+            $siswa->getCollection()->load(['user', 'absensis']);
+
+            return response()->json([
+                'data' => SiswaResource::collection($siswa->items()),
+                'current_page' => $siswa->currentPage(),
+                'last_page' => $siswa->lastPage(),
+                'per_page' => $siswa->perPage(),
+                'total' => $siswa->total(),
+                'from' => $siswa->firstItem(),
+                'to' => $siswa->lastItem(),
+            ]);
 
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data siswa', $e);
         }
     }
+
     /**
      * Get single siswa by ID
      */
