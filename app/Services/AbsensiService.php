@@ -52,7 +52,7 @@ class AbsensiService
                 $totalInserted += count($chunk);
             }
 
-            Log::info('sUCCES' . $totalInserted . '' . $tanggal);
+            Log::info('success' . $totalInserted . '' . $tanggal);
 
             Cache::tags(['absensi', 'report', 'stats'])->flush();
 
@@ -68,14 +68,28 @@ class AbsensiService
      */
     public function getActiveSiswaForAbsensi(string $tanggal): array
     {
-        return Siswa::select(['id', 'nama', 'alamat'])
+        return Siswa::with('user')
+            ->select([
+                'siswas.id as id',
+                'siswas.alamat',
+                'siswas.user_id'
+            ])
             ->where('status', 1)
-            ->whereNull('deleted_at')
+            ->whereNull('siswas.deleted_at')
             ->whereDoesntHave('absensis', function ($q) use ($tanggal) {
                 $q->where('tanggal', $tanggal);
             })
-            ->orderBy('nama')
+            ->join('users', 'siswas.user_id', '=', 'users.id')
+            ->orderBy('users.name')
             ->get()
+            ->map(function ($siswa) {
+                return [
+                    'id' => $siswa->id,
+                    'nama' => $siswa->user->name ? $siswa->user->name : 'Data Tidak Tersedia atau Terhapus',
+                    'alamat' => $siswa->alamat,
+                    'status_text' => $siswa->status ? 'Aktif' : 'Tidak Aktif'
+                ];
+            })
             ->toArray();
     }
 

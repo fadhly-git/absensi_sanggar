@@ -48,7 +48,7 @@ const breadcrumbs = [
 export default function SiswaPage() {
     // State management
     const [page, setPage] = useState(1);
-    const [perPage] = useState(10);
+    const [perPage] = useState(20);
     const [filters, setFilters] = useState<SiswaFilters>({
         search: '',
         status: 'all',
@@ -281,7 +281,7 @@ export default function SiswaPage() {
         const currentPage = siswaData.current_page;
 
         return (
-            <div className="flex items-center justify-between m-2">
+            <div className="flex items-center justify-between m-2 flex-col sm:flex-row">
                 <div className="text-sm text-gray-500">
                     Menampilkan {siswaData.from} sampai {siswaData.to} dari {siswaData.total} siswa
                 </div>

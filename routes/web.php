@@ -26,8 +26,9 @@ if (app()->environment('local')) {
             ],
             'current_time' => now()->toISOString(),
             'session_id' => $request->session()->getId(),
+            'access_token' => Auth::user() ? Auth::user()->currentAccessToken() : null,
         ]);
-    })->middleware('auth');
+    })->middleware('auth:sanctum');
 }
 
 if (env('APP_ENV') != 'local') {
