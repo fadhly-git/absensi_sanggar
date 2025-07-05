@@ -13,7 +13,6 @@ class Siswa extends Model
     protected $table = 'siswas';
 
     protected $fillable = [
-        'nama',
         'alamat',
         'status',
         'tanggal_terdaftar',
@@ -36,7 +35,12 @@ class Siswa extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function getNamaAttribute($value)
+    {
+        return $this->user ? $this->user->name : $value;
     }
 
     /**

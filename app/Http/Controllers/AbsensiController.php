@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AbsensiReportRequest;
+use App\Http\Resources\AbsensiReportResource;
 use App\Services\AbsensiService;
 use App\Services\AbsensiReportService;
 use App\Http\Requests\StoreAbsensiRequest;
@@ -21,16 +23,9 @@ class AbsensiController extends Controller
     /**
      * Get weekly report dengan caching
      */
-    public function generateWeeklyReport(Request $request): JsonResponse
+    public function generateWeeklyReport(AbsensiReportRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'periode' => 'required|string',
-            'mode' => 'required|in:tahun,bulan',
-            'page' => 'integer|min:1',
-            'limit' => 'integer|min:1|max:50',
-            'search' => 'nullable|string|max:255'
-        ]);
-
+        $validated = $request->validated();
         try {
             $paginator = $this->reportService->generateWeeklyReport(
                 $validated['periode'],
@@ -42,7 +37,7 @@ class AbsensiController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $paginator->items(),
+                'data' => AbsensiReportResource::collection($paginator->items()),
                 'pagination' => [
                     'currentPage' => $paginator->currentPage(),
                     'totalPages' => $paginator->lastPage(),
@@ -185,13 +180,13 @@ class AbsensiController extends Controller
         $start = $request->input('start_date');
         $end = $request->input('end_date');
 
-        $data = \App\Models\Absensi::with('siswa:id,nama,alamat')
+        $data = \App\Models\Absensi::with(['siswa:id,alamat,user_id', 'siswa.user:id,name'])
             ->whereBetween('tanggal', [$start, $end])
             ->get()
             ->map(function ($absen) {
                 return [
                     'id' => $absen->id,
-                    'nama' => $absen->siswa->nama ?? '-',
+                    'nama' => $absen->siswa->user->name ?? '-', // ambil nama dari tabel users
                     'alamat' => $absen->siswa->alamat ?? '-',
                     'tanggal' => $absen->tanggal,
                     'keterangan' => $absen->keterangan,
