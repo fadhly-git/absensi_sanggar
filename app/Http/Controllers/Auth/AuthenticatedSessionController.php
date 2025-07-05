@@ -47,10 +47,10 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
+
     public function store(LoginRequest $request)
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
         // Generate token untuk pengguna yang berhasil login
@@ -66,9 +66,9 @@ class AuthenticatedSessionController extends Controller
             $expiresAt = now()->addDays(7);
         } else {
             // 2 jam untuk login biasa
-            $tokenExpiry = now()->addHours(2);
-            $sessionLifetime = 2 * 60; // 2 jam dalam menit (120 menit)
-            $expiresAt = now()->addHours(2);
+            $tokenExpiry = now()->addMinutes((int) env('SESSION_LIFETIME', 120));
+            $sessionLifetime = (int) env('SESSION_LIFETIME', 120); // 2 jam dalam menit (120 menit)
+            $expiresAt = now()->addMinutes((int) env('SESSION_LIFETIME', 120));
         }
 
         // Set dynamic session lifetime
@@ -81,35 +81,24 @@ class AuthenticatedSessionController extends Controller
         $request->session()->put('is_remembered', $remember);
         $request->session()->put('login_time', now()->toISOString());
 
+        // Redirect seperti biasa
+        $redirectRoute = 'login';
         if ($user->role === 'siswa') {
-            // Redirect ke halaman dashboard siswa
-            return redirect()
-                ->route('siswa.dashboard')
-                ->withCookie(cookie(
-                    'auth_token',
-                    $token,
-                    $sessionLifetime, // dalam menit
-                    '/',
-                    env('SESSION_DOMAIN', null),
-                    false, // secure = false untuk development
-                    false  // httpOnly = false agar bisa diakses JS
-                ));
-        } else if ($user->role === 'admin' || $user->role === 'pengurus') {
-            // Redirect ke halaman dashboard admin atau pengurus
-            return redirect()
-                ->route('atmin.dashboard')
-                ->withCookie(cookie(
-                    'auth_token',
-                    $token,
-                    $sessionLifetime, // dalam menit
-                    '/',
-                    env('SESSION_DOMAIN', null),
-                    false, // secure = false untuk development
-                    false  // httpOnly = false agar bisa diakses JS
-                ));
+            $redirectRoute = 'siswa.dashboard';
+        } elseif ($user->role === 'admin' || $user->role === 'pengurus') {
+            $redirectRoute = 'atmin.dashboard';
         }
-        return redirect('/');
 
+        return redirect()->route($redirectRoute)
+            ->withCookie(cookie(
+                'auth_token',
+                $token,
+                $sessionLifetime,
+                '/',
+                env('SESSION_DOMAIN', null),
+                env('SESSION_SECURE_COOKIE', false), // Lebih baik gunakan variabel .env
+                true  // Sangat direkomendasikan untuk keamanan (HttpOnly)
+            ));
     }
 
     /**
@@ -118,9 +107,7 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         if ($user = Auth::user()) {
-            // Hapus semua token yang ada
             $user->tokens()->delete();
-            // Log::info("All tokens revoked for user: {$user->id}");
         } else {
             Log::error('Token not found for the current user.');
         }
@@ -141,26 +128,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function checkSession(Request $request)
     {
-        // // Debug logging
-        // Log::info('Session check started', [
-        //     'user_id' => Auth::id(),
-        //     'auth_check' => Auth::check(),
-        //     'session_id' => $request->session()->getId(),
-        //     'has_session_data' => $request->session()->has('session_expires_at'),
-        //     'user_agent' => $request->userAgent(),
-        //     'ip' => $request->ip(),
-        // ]);
+
 
         // Check multiple authentication guards
         $webAuth = Auth::guard('web')->check();
         $sanctumAuth = Auth::guard('sanctum')->check();
-
-        // Log::info('Auth guards check', [
-        //     'web_guard' => $webAuth,
-        //     'sanctum_guard' => $sanctumAuth,
-        //     'web_user' => Auth::guard('web')->user()?->id,
-        //     'sanctum_user' => Auth::guard('sanctum')->user()?->id,
-        // ]);
 
         // Check if user is authenticated via any method
         if (!Auth::check() && !$webAuth && !$sanctumAuth) {
@@ -218,11 +190,6 @@ class AuthenticatedSessionController extends Controller
             $expiryTime = Carbon::parse($expiresAt);
 
             if (now()->greaterThan($expiryTime)) {
-                // Log::info('Session expired', [
-                //     'user_id' => $user->id,
-                //     'expired_at' => $expiresAt,
-                //     'current_time' => now()->toISOString()
-                // ]);
 
                 // Don't destroy session here, let middleware handle it
                 return response()->json([
@@ -256,8 +223,6 @@ class AuthenticatedSessionController extends Controller
             'current_time' => now()->toISOString(),
             'session_id' => $request->session()->getId(),
         ];
-
-        // Log::info('Session check successful', $responseData);
 
         return response()->json($responseData);
     }
