@@ -235,7 +235,7 @@ export function SiswaTable({
                             <span className="block text-xs text-gray-400 dark:text-gray-300">Terdaftar</span>
                             <span className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                {formatDistanceToNow(new Date(siswa.created_at), {
+                                {formatDistanceToNow(new Date(siswa.tanggal_terdaftar), {
                                     addSuffix: true,
                                     locale: localeId
                                 })}
