@@ -57,7 +57,6 @@ class AbsensiReportService
         if ($search) {
             $baseQuery->where(function ($q) use ($search) {
                 $q->where('u.name', 'like', "%{$search}%")
-                    ->orWhere('s.nama', 'like', "%{$search}%")
                     ->orWhere('s.alamat', 'like', "%{$search}%");
             });
         }
