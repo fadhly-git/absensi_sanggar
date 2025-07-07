@@ -1,27 +1,79 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { DebugAuth } from '@/components/debug-auth'; // Import debug component
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useInitials } from '@/hooks/use-initials';
+import { CustomMonthPicker, CustomYearPicker } from '@/components/month-picker';
+import { Switch } from '@/components/ui/switch';
 import { useAbsensiRiwayat } from '@/hooks/useAbsensiRiwayat';
 import { useAuth } from '@/hooks/useAuth';
-import { useSiswaById } from '@/hooks/useSiswa';
 import StudentLayout from '@/layouts/student-layout';
 import { SharedData, type BreadcrumbItem } from '@/types';
-import { Siswa } from '@/types/siswa';
 import { Head, usePage } from '@inertiajs/react';
-import { formatDistanceToNow } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
-import { Calendar1, MapPin } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AbsensiLegend } from './absensi-legend';
 import { AbsensiGridPerBarisBulan } from './absensi-perbulan';
 
-export default function Dashboard() {
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Dashboard',
+        href: route('siswa.absensi'),
+    },
+];
+
+export default function DaftarHadirSiswa() {
+    const [bulanPerBaris, setBulanPerBaris] = useState(2);
+    useEffect(() => {
+        const handler = () => setBulanPerBaris(window.innerWidth < 1024 ? 2 : 3);
+        handler();
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, []);
     const { loading: authLoading, isAuthenticated } = useAuth();
     const page = usePage<SharedData>();
     const { auth } = page.props;
-    // Ambil data siswa berdasarkan ID dari auth
-    const { data: siswaData } = useSiswaById(auth.user.id);
+    const [filter, setFilter] = React.useState<FilterState>(() => {
+        const now = new Date();
+        return {
+            mode: 'tahun',
+            bulan: String(now.getMonth() + 1).padStart(2, '0'),
+            tahun: now.getFullYear().toString(),
+        };
+    });
+
+    console.log('DaftarHadirSiswa render', filter);
+
+    const isMonthMode = filter.mode === 'bulan';
+
+    //data fetching
+    const { data, isLoading } = useAbsensiRiwayat(auth.user.id, filter.mode, filter.bulan, filter.tahun);
+
+    // --- Handlers with useCallback for performance
+    const handleModeChange = React.useCallback((checked: boolean) => {
+        const mode = checked ? 'bulan' : 'tahun';
+        const now = new Date();
+        setFilter({
+            mode,
+            bulan: String(now.getMonth() + 1).padStart(2, '0'),
+            tahun: now.getFullYear().toString(),
+        });
+    }, []);
+
+    const handleDateChange = React.useCallback(
+        (val: string) => {
+            if (filter.mode === 'bulan') {
+                // val format: "YYYY-MM"
+                const [tahun, bulan] = val.split('-');
+                setFilter((f) => ({
+                    ...f,
+                    bulan: bulan || f.bulan,
+                    tahun: tahun || f.tahun,
+                }));
+            } else {
+                // val format: "YYYY"
+                setFilter((f) => ({
+                    ...f,
+                    tahun: val,
+                }));
+            }
+        },
+        [filter.mode],
+    );
 
     // Show loading spinner jika auth masih loading
     if (authLoading) {
@@ -52,26 +104,52 @@ export default function Dashboard() {
 
     return (
         <StudentLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
+            <Head title="Daftar Hadir Siswa" />
+            <FilterBar
+                isMonthMode={isMonthMode} // Default to year mode
+                filter={filter}
+                onModeChange={handleModeChange}
+                onDateChange={handleDateChange}
+                name={auth.user.name}
+            />
             <div className="flex flex-1 flex-col px-4">
                 <div className="@container/main flex flex-1 flex-col gap-2">
                     {/* --------- Start: Layout baru agar mirip GitHub Profile --------- */}
                     <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 py-8 lg:flex-row">
-                        {/* Sidebar */}
-                        <div className="flex w-full flex-col gap-2 lg:w-1/3">
-                            <ProfileSidebar data={siswaData} />
-                        </div>
                         {/* Main content */}
-                        <div className="flex w-full flex-col gap-2 lg:w-2/3">
-                            <DashboardCard>
-                                {/* Main Page Content */}
-                                <MainPage userId={auth.user.id} />
-                            </DashboardCard>
-                            {/* Debug Component - Remove in production */}
-                            {process.env.NODE_ENV === 'development' && (
-                                <DashboardCard>
-                                    <DebugAuth />
-                                </DashboardCard>
+                        <div className="flex w-full flex-col gap-2">
+                            <AbsensiLegend />
+                            {isLoading ? (
+                                <div className="flex flex-col gap-8">
+                                    {[0, 1].map((rowIdx) => (
+                                        <div key={rowIdx} className="w-full">
+                                            {/* Header bulan skeleton */}
+                                            <div className="mb-3 flex gap-8">
+                                                {[0, 1, 2].map((colIdx) => (
+                                                    <Skeleton key={colIdx} className="mx-auto h-6 w-20" />
+                                                ))}
+                                            </div>
+                                            {/* Grid absensi per bulan skeleton */}
+                                            <div className="flex gap-8">
+                                                {[0, 1, 2].map((colIdx) => (
+                                                    <div key={colIdx} className="flex min-w-0 flex-1 flex-col items-start gap-2">
+                                                        {[0, 1].map((rIdx) => (
+                                                            <div className="flex gap-4" key={rIdx}>
+                                                                {[0, 1, 2].map((cIdx) => (
+                                                                    <SkeletonStatus key={cIdx} />
+                                                                ))}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : data ? (
+                                <AbsensiGridPerBarisBulan absensi={data.absensi ?? data} maxCol={3} maxRow={3} bulanPerBaris={bulanPerBaris} />
+                            ) : (
+                                <div className="py-8 text-center text-gray-500">Tidak ada data absensi.</div>
                             )}
                         </div>
                     </div>
@@ -82,117 +160,71 @@ export default function Dashboard() {
     );
 }
 
-interface StudentData {
-    data: Siswa | undefined;
-}
-
-// --------- Tambahan dari layout gambar (mirip GitHub profile) ---------
-const ProfileSidebar = ({ data }: StudentData) => {
-    console.log('ProfileSidebar data:', data);
-    const editProfile = true; // Ganti true jika user bisa edit profil
-    const getInitials = useInitials();
-
-    return (
-        <aside className="bg-background border-accent-foreground mx-auto flex min-h-[450px] w-full max-w-xl flex-col items-center rounded-xl border p-6 shadow-sm lg:mx-0">
-            <div className="relative">
-                <Avatar className="h-40 w-40 rounded-full border-4 border-[#23272e] object-cover">
-                    <AvatarFallback className="rounded-lg bg-neutral-200 text-4xl font-extrabold text-black dark:bg-neutral-700 dark:text-white">
-                        {getInitials(data?.nama ?? '')}
-                    </AvatarFallback>
-                </Avatar>
-                <span className="border-accent-foreground absolute right-3 bottom-3 block h-6 w-6 rounded-full border-2 bg-green-500"></span>
-            </div>
-            <h2 className="mt-6 text-2xl font-bold capitalize">{data?.nama}</h2>
-            <div className="flex items-start gap-1 text-sm text-gray-600 dark:text-gray-200">
-                <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0" />
-                <span className="line-clamp-2 capitalize">{data?.alamat}</span>
-            </div>
-            <div className="w-full">
-                <div>
-                    <span className="block text-xs text-gray-400 dark:text-gray-300">Status</span>
-                    <Badge
-                        variant={data?.status ? 'default' : 'secondary'}
-                        className={
-                            data?.status
-                                ? 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-200'
-                                : 'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900 dark:text-red-200'
-                        }
-                    >
-                        {data?.status ? 'Aktif' : 'Tidak Aktif'}
-                    </Badge>
-                </div>
-                <div>
-                    <span className="block text-xs text-gray-400 dark:text-gray-300">Statistik Absensi</span>
-                    <span className="text-sm text-gray-600 dark:text-gray-200">
-                        Total: {data?.total_absensi ?? '-'} | Bulan ini: {data?.absensi_bulan_ini ?? '-'}
-                    </span>
-                </div>
-                <div>
-                    <span className="block text-xs text-gray-400 dark:text-gray-300">Terdaftar</span>
-                    <span className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                        <Calendar1 className="h-3 w-3" />
-                        {data?.tanggal_terdaftar
-                            ? formatDistanceToNow(new Date(data.tanggal_terdaftar), {
-                                  addSuffix: true,
-                                  locale: localeId,
-                              })
-                            : '-'}
-                    </span>
-                </div>
-            </div>
-            {editProfile && (
-                <Button
-                    variant={'outline'}
-                    className="hover:bg-primary hover:text-secondary mt-4 w-full"
-                    onClick={() => (window.location.href = route('profile.edit'))}
-                >
-                    Edit profile
-                </Button>
-            )}
-        </aside>
-    );
-};
-
-const DashboardCard = ({ children }: { children: React.ReactNode }) => (
-    <section className="bg-background border-accent-foreground w-full min-w-0 flex-1 rounded-xl border p-7 shadow-sm">{children}</section>
+const Skeleton = ({ className = '' }: { className?: string }) => (
+    <div className={`animate-pulse rounded bg-gray-200 dark:bg-neutral-800 ${className}`} />
 );
 
-// --------- END Tambahan layout ---------
+const SkeletonStatus = () => (
+    <div className="flex flex-col items-center gap-1">
+        <Skeleton className="mb-1 h-3 w-8 rounded-sm" />
+        <Skeleton className="h-8 w-8 rounded-full" />
+    </div>
+);
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: route('siswa.dashboard'),
-    },
-];
+type FilterState = {
+    mode: 'tahun' | 'bulan';
+    bulan: string;
+    tahun: string;
+};
 
-import { useEffect, useState } from 'react';
-// ...existing import...
+interface Props {
+    isMonthMode: boolean;
+    filter: FilterState;
+    onModeChange: (checked: boolean) => void;
+    onDateChange: (val: string) => void;
+    name: string;
+}
 
-const MainPage = ({ userId }: { userId: number }) => {
-    const tahun = new Date().getFullYear();
-    const { data, isLoading } = useAbsensiRiwayat(userId, 'tahun', 7, tahun);
-
-    // Responsive bulanPerBaris
-    const [bulanPerBaris, setBulanPerBaris] = useState(2);
-    useEffect(() => {
-        const handler = () => setBulanPerBaris(window.innerWidth < 1024 ? 2 : 3);
-        handler();
-        window.addEventListener('resize', handler);
-        return () => window.removeEventListener('resize', handler);
-    }, []);
-
-    if (isLoading)
-        return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
-            </div>
-        );
-    if (!data) return <div>Tidak ada data absensi.</div>;
+// --- Filter Bar with React.memo for performance
+const FilterBar = React.memo(({ isMonthMode, onModeChange, onDateChange, name }: Props) => {
     return (
-        <div className="relative flex flex-col gap-4">
-            <div className="mb-2 font-bold">Riwayat Absensi Tahun {tahun}</div>
-            <AbsensiGridPerBarisBulan absensi={data.absensi ?? data} maxCol={3} maxRow={3} bulanPerBaris={bulanPerBaris} />
+        <div className="bg-background sticky top-0 z-40 w-full border-b border-gray-100 backdrop-blur dark:border-gray-800">
+            <div className="flex flex-col items-center gap-3 px-4 py-3">
+                {/* Title & Mode */}
+                <div className="flex flex-col items-center gap-2">
+                    <span className="text-primary text-base font-bold md:text-lg">Daftar Hadir Siswa</span>
+                    <span className="text-xs">Selamat datang, {name}. Berikut adalah daftar hadir Anda.</span>
+                    <div className="flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 md:gap-2 dark:bg-black/20">
+                        <button
+                            type="button"
+                            className={`rounded px-2 py-0.5 text-xs font-semibold transition md:text-sm ${
+                                !isMonthMode ? 'bg-primary text-primary-foreground' : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                            aria-pressed={!isMonthMode}
+                            tabIndex={0}
+                            onClick={() => onModeChange(false)}
+                        >
+                            Tahun
+                        </button>
+                        <Switch checked={isMonthMode} onCheckedChange={onModeChange} className="mx-1" aria-label="Pilih Bulan/Tahun" />
+                        <button
+                            type="button"
+                            className={`rounded px-2 py-0.5 text-xs font-semibold transition md:text-sm ${
+                                isMonthMode ? 'bg-primary text-primary-foreground' : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                            aria-pressed={isMonthMode}
+                            tabIndex={0}
+                            onClick={() => onModeChange(true)}
+                        >
+                            Bulan
+                        </button>
+                    </div>
+                </div>
+                {/* Picker di bawah title & mode */}
+                <div className="flex w-full items-center justify-center gap-2">
+                    {isMonthMode ? <CustomMonthPicker onMonthChange={onDateChange} /> : <CustomYearPicker onYearChange={onDateChange} />}
+                </div>
+            </div>
         </div>
     );
-};
+});
