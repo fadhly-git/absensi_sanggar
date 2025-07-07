@@ -83,7 +83,6 @@ class AbsensiController extends Controller
     {
 
         $scanResult = $request->input(0);
-        Log::info('Processing QR code absensi with data:', $scanResult);
 
         if (!$scanResult || !isset($scanResult['rawValue'])) {
             return response()->json(['success' => false, 'message' => 'Data QR tidak valid'], 400);

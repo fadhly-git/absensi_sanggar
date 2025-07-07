@@ -7,8 +7,17 @@ export interface ScanResult {
 }
 
 export async function scanAbsensi(qrText: string): Promise<ScanResult> {
-    const response = await axios.post('/api/admin/absensi/absensi-qr', [
-        { rawValue: qrText }
-    ]);
-    return response.data;
+    try {
+        const response = await axios.post('/api/admin/absensi/absensi-qr', [
+            { rawValue: qrText }
+        ]);
+        return response.data;
+    } catch (error: any) {
+        // Ambil pesan dari backend jika ada
+        if (error.response && error.response.data && error.response.data.message) {
+            throw new Error(error.response.data.message);
+        }
+        // Fallback ke pesan error axios
+        throw new Error(error.message || 'Terjadi kesalahan');
+    }
 }
