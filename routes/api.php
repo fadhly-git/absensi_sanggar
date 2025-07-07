@@ -52,6 +52,10 @@ Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
 
         Route::get('riwayat-siswa/{user_id}', [AbsensiController::class, 'riwayatSiswa'])
             ->name('api.admin.absensi.riwayat-siswa');
+
+        // absensi qr
+        Route::post('absensi-qr', [AbsensiController::class, 'absensiQr'])
+            ->name('api.admin.absensi.absensi-qr');
     });
 
     // Siswa - Updated routes for simplified structure

@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { scanAbsensi, ScanResult } from '@/services/absensiScanService';
 
 export function useAbsensiScan() {
-    const mutation = useMutation<ScanResult, Error, number>({
+    const mutation = useMutation<ScanResult, Error, string>({
         mutationFn: scanAbsensi,
     });
 
@@ -11,13 +11,13 @@ export function useAbsensiScan() {
             const parsed = JSON.parse(qrText);
             if (!parsed.id) {
                 mutation.reset();
-                mutation.mutateAsync(-1); // error
+                mutation.mutateAsync(''); // error, kirim string kosong
                 return;
             }
-            mutation.mutate(parsed.id);
+            mutation.mutate(qrText); // kirim string JSON QR utuh
         } catch {
             mutation.reset();
-            mutation.mutateAsync(-1); // error
+            mutation.mutateAsync(''); // error
         }
     };
 
@@ -30,5 +30,6 @@ export function useAbsensiScan() {
         reset,
         isSuccess: mutation.isSuccess,
         isError: mutation.isError,
+        error: mutation.error,
     };
 }
