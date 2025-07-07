@@ -1,73 +1,140 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useAbsensiScan } from "@/hooks/useAbsensiScan"
-import { useRef, useEffect } from "react"
-import { CheckCircle2, XCircle, RefreshCw } from "lucide-react"
-import { QrReader } from 'react-qr-reader'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAbsensiScan } from '@/hooks/useAbsensiScan';
+import { Scanner } from '@yudiel/react-qr-scanner';
+import { Camera, CameraOff, CheckCircle2, RefreshCw, XCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function AbsensiQrScanner() {
-    const { loading, result, handleScan, reset } = useAbsensiScan()
-    const successAudio = useRef<HTMLAudioElement | null>(null)
-    const errorAudio = useRef<HTMLAudioElement | null>(null)
+    const { loading, result, handleScan, reset } = useAbsensiScan();
+    const successAudio = useRef<HTMLAudioElement | null>(null);
+    const errorAudio = useRef<HTMLAudioElement | null>(null);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const [cameraActive, setCameraActive] = useState(true);
+    const [timeoutActive, setTimeoutActive] = useState(false);
+
+    // Reset timeout when there's activity
+    const resetTimeout = () => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+
+        setTimeoutActive(false);
+
+        timeoutRef.current = setTimeout(
+            () => {
+                setCameraActive(false);
+                setTimeoutActive(true);
+            },
+            1 * 60 * 1000,
+        ); // 2 minutes
+    };
+
+    // Start camera and reset timeout
+    const startCamera = () => {
+        setCameraActive(true);
+        setTimeoutActive(false);
+        resetTimeout();
+    };
+
+    // Initialize timeout on mount
+    useEffect(() => {
+        resetTimeout();
+
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Reset timeout on scan activity
+    useEffect(() => {
+        if (loading) {
+            resetTimeout();
+        }
+    }, [loading]);
 
     useEffect(() => {
         if (result) {
-            if (result.success) successAudio.current?.play()
-            else errorAudio.current?.play()
+            if (result.success) successAudio.current?.play();
+            else errorAudio.current?.play();
         }
-    }, [result])
+    }, [result]);
+
+    const handleScanResult = (scanResult: any) => {
+        if (scanResult && scanResult.length > 0 && !loading && cameraActive) {
+            handleScan(scanResult[0].rawValue);
+            resetTimeout(); // Reset timeout on successful scan
+        }
+    };
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 to-sky-100">
-            <Card className="w-full max-w-lg shadow-xl border-0">
+            <Card className="w-full max-w-lg border-0 shadow-xl">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold text-indigo-700">Absensi Siswa QR</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">Arahkan QR ke kamera, scan otomatis</p>
+                    <p className="text-muted-foreground mt-1 text-sm">Arahkan QR ke kamera, scan otomatis</p>
                 </CardHeader>
                 <CardContent>
                     {!result && (
                         <div className="flex flex-col items-center gap-4">
-                            <div className="rounded-xl border-2 border-dashed border-indigo-400 bg-black w-72 h-72 flex items-center justify-center overflow-hidden shadow-inner relative">
-                                <QrReader
-                                    constraints={{ facingMode: "user" }}
-                                    containerStyle={{ width: "100%", height: "100%" }}
-                                    videoStyle={{ width: "100%", height: "100%" }}
-                                    onResult={(result) => {
-                                        if (result?.getText && !loading) handleScan(result.getText())
-                                    }}
-                                />
-                                {loading && (
-                                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
-                                        <RefreshCw className="animate-spin text-white mb-2" size={36} />
-                                        <span className="text-white">Memproses...</span>
+                            <div className="relative flex h-72 w-72 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-indigo-400 bg-black shadow-inner">
+                                {cameraActive ? (
+                                    <>
+                                        <Scanner
+                                            onScan={handleScanResult}
+                                            constraints={{
+                                                facingMode: 'user',
+                                            }}
+                                            styles={{
+                                                container: { width: '100%', height: '100%' },
+                                                video: { width: '100%', height: '100%', objectFit: 'cover' },
+                                            }}
+                                        />
+                                        {loading && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                                                <RefreshCw className="mb-2 animate-spin text-white" size={36} />
+                                                <span className="text-white">Memproses...</span>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center text-white">
+                                        <CameraOff size={48} className="mb-4 text-gray-400" />
+                                        <p className="mb-4 text-center text-sm text-gray-300">
+                                            {timeoutActive ? 'Kamera dimatikan karena tidak ada aktivitas' : 'Kamera tidak aktif'}
+                                        </p>
+                                        <Button onClick={startCamera} variant="outline" className="bg-white text-black hover:bg-gray-100">
+                                            <Camera className="mr-2" size={16} />
+                                            Aktifkan Kamera
+                                        </Button>
                                     </div>
                                 )}
                             </div>
-                            <p className="mt-2 text-gray-500 text-center text-xs">Pastikan QR jelas & siswa terdaftar</p>
+                            <p className="mt-2 text-center text-xs text-gray-500">
+                                {cameraActive ? 'Pastikan QR jelas & siswa terdaftar' : 'Klik tombol untuk mengaktifkan kamera'}
+                            </p>
                         </div>
                     )}
 
                     {result && (
-                        <Alert
-                            variant={result.success ? "default" : "destructive"}
-                            className="my-4 flex flex-col items-center"
-                        >
+                        <Alert variant={result.success ? 'default' : 'destructive'} className="my-4 flex flex-col items-center">
                             {result.success ? (
-                                <CheckCircle2 size={48} className="text-green-500 mb-1" />
+                                <CheckCircle2 size={48} className="mb-1 text-green-500" />
                             ) : (
-                                <XCircle size={48} className="text-red-500 mb-1" />
+                                <XCircle size={48} className="mb-1 text-red-500" />
                             )}
-                            <AlertTitle className="text-lg font-bold">
-                                {result.success ? "Berhasil!" : "Gagal"}
-                            </AlertTitle>
-                            <AlertDescription className="text-center">
-                                {result.message}
-                            </AlertDescription>
+                            <AlertTitle className="text-lg font-bold">{result.success ? 'Berhasil!' : 'Gagal'}</AlertTitle>
+                            <AlertDescription className="text-center">{result.message}</AlertDescription>
                             <Button
                                 variant="outline"
                                 className="mt-4"
-                                onClick={reset}
+                                onClick={() => {
+                                    reset();
+                                    startCamera(); // Restart camera when scanning again
+                                }}
                             >
                                 Scan Lagi
                             </Button>
@@ -80,5 +147,5 @@ export default function AbsensiQrScanner() {
                 </CardContent>
             </Card>
         </div>
-    )
+    );
 }

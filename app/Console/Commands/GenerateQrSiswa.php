@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class GenerateQrSiswa extends Command
@@ -34,17 +35,17 @@ class GenerateQrSiswa extends Command
         $count = 0;
 
         foreach ($siswas as $siswa) {
-            if ($siswa->qrcode_path) {
-                $this->info('siswa' . $siswa->nama . ' sudah punya Qr' . $siswa->qrcode_path);
-                continue;
-            }
+            // if ($siswa->qrcode_path) {
+            //     $this->info('siswa' . $siswa->nama . ' sudah punya Qr' . $siswa->qrcode_path);
+            //     continue;
+            // }
             $qrData = [
                 'id' => $siswa->id,
                 'nama' => $siswa->nama,
                 'tanggal_terdaftar' => $siswa->tanggal_terdaftar,
             ];
             $fileName = "qr_siswa/siswa_{$siswa->id}.png";
-            \Storage::disk()->put($fileName, QrCode::format('png')
+            Storage::disk('public')->put($fileName, QrCode::format('png')
                 ->size(300)
                 ->generate(json_encode($qrData)));
 
