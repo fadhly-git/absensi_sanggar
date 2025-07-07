@@ -68,7 +68,7 @@ export default function AbsensiQrScanner() {
             // Auto reset result setelah 2 detik
             autoResetRef.current = setTimeout(() => {
                 reset();
-            }, 500);
+            }, 2000);
         }
         return () => {
             if (autoResetRef.current) clearTimeout(autoResetRef.current);
@@ -77,10 +77,10 @@ export default function AbsensiQrScanner() {
 
     useEffect(() => {
         if (isError) {
-            console.error('Error during scan:', error);
+            errorAudio.current?.play()
             const timer = setTimeout(() => {
                 reset();
-            }, 500);
+            }, 2000);
             return () => clearTimeout(timer);
         }
     }, [isError, reset]);
