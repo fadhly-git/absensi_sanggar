@@ -106,3 +106,5 @@ Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
         Route::get('export', [KeuanganController::class, 'exportFinancialReport'])->name('export');
     });
 });
+
+require __DIR__ . '/siswaApi.php';

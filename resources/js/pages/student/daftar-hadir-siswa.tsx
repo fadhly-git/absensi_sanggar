@@ -98,8 +98,6 @@ export default function DaftarHadirSiswa() {
         );
     }
 
-    console.log('filter:', filter);
-
     return (
         <StudentLayout breadcrumbs={breadcrumbs}>
             <Head title="Daftar Hadir Siswa" />

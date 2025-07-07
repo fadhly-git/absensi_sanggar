@@ -27,9 +27,6 @@ export function useSiswaById(id: number) {
     });
 }
 
-export function useSiswaByIdSpecific(ids: number[]) {
-
-}
 
 export function useSiswaStats() {
     return useQuery({

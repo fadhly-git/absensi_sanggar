@@ -15,7 +15,7 @@ Route::middleware(['auth:sanctum', 'role:siswa,admin', 'check.token'])->group(fu
         })->name('siswa.absensi');
 
         Route::get('qr-code', function () {
-            return 'todo: tampilkan QR code siswa';
+            return Inertia::render('student/qr-code');
         })->name('siswa.qr-code');
     });
 
