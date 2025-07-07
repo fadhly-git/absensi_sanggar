@@ -11,11 +11,11 @@ Route::middleware(['auth:sanctum', 'role:siswa,admin', 'check.token'])->group(fu
         })->name('siswa.dashboard');
 
         Route::get('absensi', function () {
-            return 'todo: tampilkan absensi siswa';
+            return Inertia::render('student/daftar-hadir-siswa');
         })->name('siswa.absensi');
 
         Route::get('qr-code', function () {
-            return 'todo: tampilkan QR code siswa';
+            return Inertia::render('student/qr-code');
         })->name('siswa.qr-code');
     });
 

@@ -3,11 +3,22 @@ import type {
     Siswa,
     SiswaFormData,
     SiswaFilters,
-    PaginatedSiswaResponse
+    PaginatedSiswaResponse,
+    SiswaResponse
 } from '@/types/siswa';
 
 export class SiswaService {
     private static readonly baseUrl = '/api/admin/siswa';
+
+    static async getById(id: number): Promise<Siswa> {
+        try {
+            const response = await apiClient.get<SiswaResponse>(`${SiswaService.baseUrl}/get-by-user/${id}`);
+            return response.data.data;
+        } catch (error) {
+            console.error('Error fetching siswa by ID:', error);
+            throw error;
+        }
+    }
 
     static async getAll(
         page: number = 1,

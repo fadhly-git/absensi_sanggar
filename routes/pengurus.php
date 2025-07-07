@@ -19,6 +19,10 @@ Route::middleware(['auth:sanctum', 'verified', 'role:pengurus,admin', 'check.tok
             return Inertia::render('siswa');
         })->name('atmin.siswa');
 
+        Route::get('scan-absensi', function () {
+            return Inertia::render('scan-absensi');
+        })->name('atmin.scan-absensi');
+
         Route::get('register', function () {
             return Inertia::render('register');
         })->name('atmin.register');

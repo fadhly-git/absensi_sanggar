@@ -12,6 +12,56 @@ use Illuminate\Support\Facades\Log;
 class AbsensiService
 {
     /**
+     * @var string
+     */
+    protected $model = Absensi::class;
+
+    public function saveQrRequest(array $dataToInsert)
+    {
+        if (empty($dataToInsert)) {
+            throw new \InvalidArgumentException('Tidak ada data untuk disimpan.');
+        }
+
+        return DB::transaction(function () use ($dataToInsert) {
+            $tanggal = $dataToInsert[0]['tanggal'];
+            $siswaIds = collect($dataToInsert)->pluck('id_siswa')->toArray();
+
+            // Cek siswa yang sudah absen di tanggal ini
+            $sudahAbsenIds = Absensi::where('tanggal', $tanggal)
+                ->whereIn('id_siswa', $siswaIds)
+                ->pluck('id_siswa')
+                ->toArray();
+
+            if (!empty($sudahAbsenIds)) {
+                throw new \Exception('Beberapa siswa sudah absen di tanggal ini: ' . implode(', ', $sudahAbsenIds));
+            }
+
+            // --- BONUS LOGIC START ---
+            $now = now();
+            foreach ($dataToInsert as &$data) {
+                $count = Absensi::where('id_siswa', $data['id_siswa'])
+                    ->where('tanggal', '<', $tanggal)
+                    ->count();
+                $nextCount = $count + 1;
+                $data['bonus'] = ($nextCount % 21 === 0);
+                $data['created_at'] = $now;
+                $data['updated_at'] = $now;
+            }
+            unset($data);
+            // --- BONUS LOGIC END ---
+
+            Absensi::insert($dataToInsert);
+
+            Cache::tags(['absensi', 'report', 'stats'])->flush();
+
+            return [
+                'total_inserted' => count($dataToInsert),
+                'tanggal' => $tanggal
+            ];
+        });
+    }
+
+    /**
      * Bulk save absensi dengan optimasi
      */
     public function saveFromRequest(StoreAbsensiRequest $request): array
@@ -33,15 +83,27 @@ class AbsensiService
                 ->toArray();
 
             if (!empty($sudahAbsenIds)) {
-                // Bisa throw error atau skip siswa yang sudah absen
                 throw new \Exception('Beberapa siswa sudah absen di tanggal ini: ' . implode(', ', $sudahAbsenIds));
-                // Atau: $dataToInsert = array_filter($dataToInsert, fn($d) => !in_array($d['id_siswa'], $sudahAbsenIds));
             }
 
             // Hapus data lama hanya untuk siswa yang akan diupdate
             Absensi::where('tanggal', $tanggal)
                 ->whereIn('id_siswa', $siswaIds)
                 ->delete();
+
+            // --- BONUS LOGIC START ---
+            foreach ($dataToInsert as &$data) {
+                // Hitung total absensi sebelum hari ini
+                $count = Absensi::where('id_siswa', $data['id_siswa'])
+                    ->where('tanggal', '<', $tanggal)
+                    ->count();
+
+                // Jika absensi ke-(kelipatan 21), set bonus true
+                $nextCount = $count + 1; // +1 karena absensi hari ini
+                $data['bonus'] = ($nextCount % 21 === 0);
+            }
+            unset($data);
+            // --- BONUS LOGIC END ---
 
             // Bulk insert dengan chunk untuk performa
             $chunks = array_chunk($dataToInsert, 100);

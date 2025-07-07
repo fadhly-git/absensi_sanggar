@@ -17,6 +17,17 @@ export function useSiswa(
     });
 }
 
+export function useSiswaById(id: number) {
+    return useQuery({
+        queryKey: ['siswa', id],
+        queryFn: () => SiswaService.getById(id),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        placeholderData: (previousData) => previousData,
+        enabled: !!id, // Only run if id is defined
+    });
+}
+
+
 export function useSiswaStats() {
     return useQuery({
         queryKey: ['siswa-stats'],

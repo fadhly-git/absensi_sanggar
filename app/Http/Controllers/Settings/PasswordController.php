@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use Auth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -17,7 +18,13 @@ class PasswordController extends Controller
      */
     public function edit(): Response
     {
-        return Inertia::render('settings/password');
+        $user = Auth::user();
+        if ($user->role === 'admin' || $user->role === 'pengurus') {
+            return Inertia::render('settings/password');
+        } else if ($user->role === 'siswa') {
+            return Inertia::render('student/settings/password');
+        }
+        return Inertia::render('student/landing-page');
     }
 
     /**

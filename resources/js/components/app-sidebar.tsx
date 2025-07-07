@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { CircleDollarSignIcon, DatabaseZap, FileUser, FingerprintIcon, Layout } from 'lucide-react';
+import { CameraIcon, CircleDollarSignIcon, DatabaseZap, FileUser, FingerprintIcon, Layout } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -21,6 +21,11 @@ const mainNavItems: NavItem[] = [
         title: 'Daftar Hadir',
         url: 'atmin.daftar-hadir',
         icon: FingerprintIcon,
+    },
+    {
+        title: 'Scan QR Absensi',
+        url: 'atmin.scan-absensi',
+        icon: CameraIcon,
     },
     {
         title: 'keuangan',

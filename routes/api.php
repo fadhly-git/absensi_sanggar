@@ -49,6 +49,13 @@ Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
 
         Route::delete('/{id}', [AbsensiController::class, 'destroy'])
             ->name('api.admin.absensi.destroy');
+
+        Route::get('riwayat-siswa/{user_id}', [AbsensiController::class, 'riwayatSiswa'])
+            ->name('api.admin.absensi.riwayat-siswa');
+
+        // absensi qr
+        Route::post('absensi-qr', [AbsensiController::class, 'absensiQr'])
+            ->name('api.admin.absensi.absensi-qr');
     });
 
     // Siswa - Updated routes for simplified structure
@@ -69,6 +76,8 @@ Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
             ->name('api.admin.siswa.trashed');
         Route::post('bulk-action', [SiswaController::class, 'bulkAction'])
             ->name('api.admin.siswa.bulk-action');
+        Route::get('get-by-user/{id}', [SiswaController::class, 'getById'])
+            ->name('api.admin.siswa.get-by-user');
 
         // Resource routes KEDUA
         Route::apiResource('/', SiswaController::class, [
@@ -101,3 +110,5 @@ Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
         Route::get('export', [KeuanganController::class, 'exportFinancialReport'])->name('export');
     });
 });
+
+require __DIR__ . '/siswaApi.php';

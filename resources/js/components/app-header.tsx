@@ -22,7 +22,7 @@ const mainNavItems: NavItem[] = [
         icon: Home,
     },
     {
-        title: 'Presensi',
+        title: 'Daftar Hadir',
         url: 'siswa.absensi',
         icon: Fingerprint,
     },

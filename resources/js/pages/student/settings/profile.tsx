@@ -9,8 +9,8 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import StudentLayout from '@/layouts/student-layout';
-import StudentSettingsLayout from '@/layouts/settings/layout';
+import AppLayout from '@/layouts/app-layout';
+import SettingsLayout from '@/layouts/settings/layout';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -41,16 +41,16 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     };
 
     return (
-        <StudentLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Profile settings" />
 
-            <StudentSettingsLayout>
+            <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Informasi Profil" description="Perbarui nama dan alamat email Anda" />
+                    <HeadingSmall title="Profile information" description="Update your name and email address" />
 
                     <form onSubmit={submit} className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="name">Nama</Label>
+                            <Label htmlFor="name">Name</Label>
 
                             <Input
                                 id="name"
@@ -59,14 +59,14 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('name', e.target.value)}
                                 required
                                 autoComplete="name"
-                                placeholder="Nama lengkap"
+                                placeholder="Full name"
                             />
 
                             <InputError className="mt-2" message={errors.name} />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Alamat Email</Label>
+                            <Label htmlFor="email">Email address</Label>
 
                             <Input
                                 id="email"
@@ -76,7 +76,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 onChange={(e) => setData('email', e.target.value)}
                                 required
                                 autoComplete="username"
-                                placeholder="Alamat email"
+                                placeholder="Email address"
                             />
 
                             <InputError className="mt-2" message={errors.email} />
@@ -84,28 +84,28 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
                         {mustVerifyEmail && auth.user.email_verified_at === null && (
                             <div>
-                                <p className="text-muted-foreground -mt-4 text-xs">
-                                    Alamat email Anda belum terverifikasi.{' '}
+                                <p className="text-muted-foreground -mt-4 text-sm">
+                                    Your email address is unverified.{' '}
                                     <Link
                                         href={route('verification.send')}
                                         method="post"
                                         as="button"
                                         className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                                     >
-                                        Klik di sini untuk mengirim ulang email verifikasi.
+                                        Click here to resend the verification email.
                                     </Link>
                                 </p>
 
                                 {status === 'verification-link-sent' && (
                                     <div className="mt-2 text-sm font-medium text-green-600">
-                                        Link verifikasi baru telah dikirim ke alamat email Anda.
+                                        A new verification link has been sent to your email address.
                                     </div>
                                 )}
                             </div>
                         )}
 
                         <div className="flex items-center gap-4">
-                            <Button disabled={processing}>Simpan</Button>
+                            <Button disabled={processing}>Save</Button>
 
                             <Transition
                                 show={recentlySuccessful}
@@ -121,7 +121,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                 </div>
 
                 <DeleteUser />
-            </StudentSettingsLayout>
-        </StudentLayout>
+            </SettingsLayout>
+        </AppLayout>
     );
 }

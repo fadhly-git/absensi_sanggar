@@ -9,6 +9,7 @@ use App\Services\AbsensiReportService;
 use App\Http\Requests\StoreAbsensiRequest;
 use App\Exports\AttendanceExport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\JsonResponse;
 
@@ -18,6 +19,25 @@ class AbsensiController extends Controller
         protected AbsensiService $absensiService,
         protected AbsensiReportService $reportService
     ) {
+    }
+
+    /**
+     * Get riwayat absensi siswa
+     */
+    public function riwayatSiswa(Request $request, $user_id)
+    {
+        $mode = $request->input('mode', 'tahun'); // 'bulan' atau 'tahun'
+        $bulan = $request->input('bulan', now()->format('m'));
+        $tahun = $request->input('tahun', now()->format('Y'));
+
+        $result = $this->reportService->getRiwayatSiswa(
+            $user_id,
+            $mode,
+            $bulan,
+            $tahun
+        );
+
+        return response()->json($result);
     }
 
     /**
@@ -54,6 +74,64 @@ class AbsensiController extends Controller
                 'error' => app()->environment('local') ? $e->getMessage() : null
             ], 500);
         }
+    }
+
+    /**
+     * store absensi QR code
+     */
+    public function absensiQr(Request $request)
+    {
+
+        $scanResult = $request->input(0);
+
+        if (!$scanResult || !isset($scanResult['rawValue'])) {
+            return response()->json(['success' => false, 'message' => 'Data QR tidak valid'], 400);
+        }
+
+        $qrData = json_decode($scanResult['rawValue'], true);
+
+        if (!$qrData || !isset($qrData['id'])) {
+            return response()->json(['success' => false, 'message' => 'Isi QR tidak valid'], 400);
+        }
+
+        $siswa = \App\Models\Siswa::find($qrData['id']);
+        if (!$siswa) {
+            return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan'], 404);
+        }
+
+        $tanggal = "2025-07-09";
+
+        $absenHariIni = \App\Models\Absensi::where('id_siswa', $siswa->id)
+            ->where('tanggal', $tanggal)
+            ->first();
+
+        if ($absenHariIni) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Siswa sudah melakukan absensi hari ini'
+            ], 409);
+        }
+
+        $dataToInsert = [
+            [
+                'id_siswa' => $siswa->id,
+                'tanggal' => $tanggal,
+            ]
+        ];
+
+        try {
+            $this->absensiService->saveQrRequest($dataToInsert);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan absensi: ' . $e->getMessage()
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Absensi berhasil dicatat'
+        ], 201);
     }
 
     /**
