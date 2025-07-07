@@ -72,9 +72,10 @@ class AbsensiReportService
                 ->whereIn('tanggal', $sundays)
                 ->get()
                 ->keyBy('tanggal');
+            $result['absensi'][(int) $bulan] = [];
             foreach ($sundays as $tanggal) {
                 $record = $absensi->get($tanggal);
-                $result['absensi'][$tanggal] = $record ? ($record->bonus ? 'B' : 'H') : 'T';
+                $result['absensi'][(int) $bulan][$tanggal] = $record ? ($record->bonus ? 'B' : 'H') : 'T';
             }
         }
         return $result;

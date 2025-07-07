@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,13 +39,26 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        Log::info('Updating user profile', [
+            'user_id' => $request->user()->id,
+            'data' => $request->all(),
+        ]);
+        $user = $request->user();
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
+        $user->save();
 
-        $request->user()->save();
+        // Jika user adalah siswa, update juga alamat di tabel siswa
+        if ($user->role === 'siswa') {
+            $siswas = $user->siswas; // pastikan relasi 'siswas' ada di model User
+            if ($siswas) {
+                $siswas->alamat = $request->input('alamat');
+                $siswas->save();
+            }
+        }
 
         return to_route('profile.edit');
     }

@@ -45,7 +45,8 @@ export function AbsensiInputDialog({
         (s) =>
             s.nama.toLowerCase().includes(search.toLowerCase()) ||
             (s.alamat?.toLowerCase() || "").includes(search.toLowerCase())
-    );
+    )
+        .filter((s) => !selected.find((sel) => sel.id === s.id)); // <-- siswa yang sudah dipilih tidak ditampilkan lagi;
 
     const addSiswa = (s: Siswa) => {
         if (!selected.find((sel) => sel.id === s.id)) {

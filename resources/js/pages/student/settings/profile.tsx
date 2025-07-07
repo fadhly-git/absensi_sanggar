@@ -22,6 +22,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface ProfileForm {
     name: string;
     email: string;
+    alamat: string; // Assuming 'alamat' is a field in the Siswa model
 }
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
@@ -30,6 +31,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm<Required<ProfileForm>>({
         name: auth.user.name,
         email: auth.user.email,
+        alamat: auth.user.siswas?.alamat || '', // Assuming 'alamat' is a field in the Siswa model
     });
 
     const submit: FormEventHandler = (e) => {
@@ -66,7 +68,23 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Alamat Email</Label>
+                            <Label htmlFor="alamat">Alamat Rumah</Label>
+
+                            <Input
+                                id="name"
+                                className="mt-1 block w-full"
+                                value={data.alamat}
+                                onChange={(e) => setData('alamat', e.target.value)}
+                                required
+                                autoComplete="name"
+                                placeholder="Alamat lengkap rumah Anda"
+                            />
+
+                            <InputError className="mt-2" message={errors.alamat} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="email">Email</Label>
 
                             <Input
                                 id="email"

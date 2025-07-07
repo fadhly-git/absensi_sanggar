@@ -23,7 +23,6 @@ export default function Dashboard() {
     const { auth } = page.props;
     // Ambil data siswa berdasarkan ID dari auth
     const { data: siswaData } = useSiswaById(auth.user.id);
-    console.log('Dashboard siswaData:', siswaData);
 
     // Show loading spinner jika auth masih loading
     if (authLoading) {
@@ -169,9 +168,21 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 
 
+import { useEffect, useState } from "react";
+// ...existing import...
+
 const MainPage = ({ userId }: { userId: number }) => {
     const tahun = new Date().getFullYear();
     const { data, isLoading } = useAbsensiRiwayat(userId, "tahun", 7, tahun);
+
+    // Responsive bulanPerBaris
+    const [bulanPerBaris, setBulanPerBaris] = useState(2);
+    useEffect(() => {
+        const handler = () => setBulanPerBaris(window.innerWidth < 1024 ? 2 : 3);
+        handler();
+        window.addEventListener("resize", handler);
+        return () => window.removeEventListener("resize", handler);
+    }, []);
 
     if (isLoading) return (
         <div className="min-h-screen flex items-center justify-center">
@@ -181,10 +192,8 @@ const MainPage = ({ userId }: { userId: number }) => {
     if (!data) return <div>Tidak ada data absensi.</div>;
     return (
         <div className="relative flex flex-col gap-4">
-            {/* Mirip style README card di gambar */}
             <div className="font-bold mb-2">Riwayat Absensi Tahun {tahun}</div>
-            <AbsensiGridPerBarisBulan absensi={data.absensi ?? data} maxCol={3} maxRow={2} bulanPerBaris={3} />
-            {/* Section untuk Technologies & Tools bisa ditambah di sini */}
+            <AbsensiGridPerBarisBulan absensi={data.absensi ?? data} maxCol={3} maxRow={3} bulanPerBaris={bulanPerBaris} />
         </div>
     )
 }
