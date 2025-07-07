@@ -11,6 +11,75 @@ use Carbon\Carbon;
 
 class AbsensiReportService
 {
+
+    /**
+     * Ambil riwayat absensi siswa per bulan atau per tahun.
+     *
+     * @param int $user_id
+     * @param string $mode 'bulan' atau 'tahun'
+     * @param int|string $bulan
+     * @param int|string $tahun
+     * @return array
+     */
+    public function getRiwayatSiswa($user_id, $mode = 'tahun', $bulan = null, $tahun = null): array
+    {
+        $bulan = $bulan ?? now()->format('m');
+        $tahun = $tahun ?? now()->format('Y');
+
+        $siswa = Siswa::with('user')->where('user_id', $user_id)->firstOrFail();
+
+        $result = [
+            'siswa_id' => $siswa->id,
+            'siswa_nama' => $siswa->user->name ?? $siswa->nama,
+            'siswa_alamat' => $siswa->alamat,
+            'siswa_status' => $siswa->status,
+        ];
+
+        if ($mode === 'tahun') {
+            for ($m = 1; $m <= 12; $m++) {
+                $sundays = [];
+                $start = Carbon::createFromDate($tahun, $m, 1)->startOfMonth();
+                $end = (clone $start)->endOfMonth();
+                $current = $start->copy();
+                while ($current->lte($end)) {
+                    if ($current->dayOfWeek === Carbon::SUNDAY) {
+                        $sundays[] = $current->format('Y-m-d');
+                    }
+                    $current->addDay();
+                }
+                $absensi = Absensi::where('id_siswa', $siswa->id)
+                    ->whereIn('tanggal', $sundays)
+                    ->get()
+                    ->keyBy('tanggal');
+                foreach ($sundays as $tanggal) {
+                    $record = $absensi->get($tanggal);
+                    $result['absensi'][$m][$tanggal] = $record ? ($record->bonus ? 'B' : 'H') : 'T';
+                }
+            }
+        } else {
+            // mode bulanan (default)
+            $sundays = [];
+            $start = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+            $end = (clone $start)->endOfMonth();
+            $current = $start->copy();
+            while ($current->lte($end)) {
+                if ($current->dayOfWeek === Carbon::SUNDAY) {
+                    $sundays[] = $current->format('Y-m-d');
+                }
+                $current->addDay();
+            }
+            $absensi = Absensi::where('id_siswa', $siswa->id)
+                ->whereIn('tanggal', $sundays)
+                ->get()
+                ->keyBy('tanggal');
+            foreach ($sundays as $tanggal) {
+                $record = $absensi->get($tanggal);
+                $result['absensi'][$tanggal] = $record ? ($record->bonus ? 'B' : 'H') : 'T';
+            }
+        }
+        return $result;
+    }
+
     /**
      * Generate weekly report dengan optimasi query
      */

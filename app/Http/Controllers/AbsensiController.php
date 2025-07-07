@@ -21,6 +21,25 @@ class AbsensiController extends Controller
     }
 
     /**
+     * Get riwayat absensi siswa
+     */
+    public function riwayatSiswa(Request $request, $user_id)
+    {
+        $mode = $request->input('mode', 'tahun'); // 'bulan' atau 'tahun'
+        $bulan = $request->input('bulan', now()->format('m'));
+        $tahun = $request->input('tahun', now()->format('Y'));
+
+        $result = $this->reportService->getRiwayatSiswa(
+            $user_id,
+            $mode,
+            $bulan,
+            $tahun
+        );
+
+        return response()->json($result);
+    }
+
+    /**
      * Get weekly report dengan caching
      */
     public function generateWeeklyReport(AbsensiReportRequest $request): JsonResponse

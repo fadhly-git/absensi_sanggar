@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\SiswaExport;
 use App\Http\Requests\SiswaRequest;
 use App\Http\Resources\SiswaResource;
 use App\Imports\SiswaImport;
 use App\Models\Siswa;
 use App\Models\User;
-use Carbon\Carbon;
-use Hash;
+use App\Services\SiswaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +16,15 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SiswaController extends Controller
 {
+    /**
+     * @var SiswaService
+     */
+    protected $siswaService;
+
+    public function __construct(SiswaService $siswaService)
+    {
+        $this->siswaService = $siswaService;
+    }
 
     // Helper untuk error response & logging
     private function errorResponse($message, $e, $context = [], $status = 500)
@@ -162,49 +169,8 @@ class SiswaController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Siswa::with(['user', 'absensis'])
-                ->leftJoin('users', 'siswas.user_id', '=', 'users.id')
-                ->select([
-                    'siswas.*',
-                    'users.name as nama_user'
-                ]);
-
-            if ($request->filled('search')) {
-                $searchTerm = $request->search;
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->where('users.name', 'like', "%{$searchTerm}%")
-                        ->orWhere('siswas.alamat', 'like', "%{$searchTerm}%");
-                });
-            }
-
-            if ($request->filled('status') && $request->status !== 'all') {
-                $status = $request->status === '1' ? true : false;
-                $query->where('siswas.status', $status);
-            }
-
-            $sortBy = $request->get('sortBy', 'nama_user');
-            $sortOrder = $request->get('sortOrder', 'asc');
-            $allowedSortFields = ['nama_user', 'alamat', 'created_at', 'status'];
-            if (in_array($sortBy, $allowedSortFields)) {
-                $query->orderBy($sortBy, $sortOrder);
-            }
-
-            $perPage = min($request->get('per_page', 10), 100);
-            $siswa = $query->paginate($perPage);
-
-            // Agar resource tetap konsisten, tambahkan eager load relasi user
-            $siswa->getCollection()->load(['user', 'absensis']);
-
-            return response()->json([
-                'data' => SiswaResource::collection($siswa->items()),
-                'current_page' => $siswa->currentPage(),
-                'last_page' => $siswa->lastPage(),
-                'per_page' => $siswa->perPage(),
-                'total' => $siswa->total(),
-                'from' => $siswa->firstItem(),
-                'to' => $siswa->lastItem(),
-            ]);
-
+            $results = $this->siswaService->getPaginated($request->all());
+            return response()->json($results);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data siswa', $e);
         }
@@ -223,57 +189,28 @@ class SiswaController extends Controller
         }
     }
 
+    public function getById($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $siswa = Siswa::with(['user', 'absensis'])->where('user_id', $user->id)->firstOrFail();
+            return new SiswaResource($siswa);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Siswa tidak ditemukan', $e, ['siswa_id' => $id], 404);
+        }
+    }
+
     /**
      * Store new siswa
      */
     public function store(SiswaRequest $request)
     {
         try {
-            DB::beginTransaction();
-            $validated = $request->validated();
-
-            // Set default tanggal_terdaftar to now 
-            $tanggal_terdaftar = Carbon::now()->toDateString();
-            $tahun_masuk = Carbon::now()->year;
-
-            // generate nis untuk tahun masuk
-            $count = Siswa::withTrashed()->whereYear('tanggal_terdaftar', $tahun_masuk)->count();
-            $inisial = strtolower(env('INITIAL_CODE', 'stnlb'));
-            $nis = $tahun_masuk . $inisial . sprintf('%04d', $count + 1);
-
-            // buat user baru
-            $user = User::create([
-                'name' => ucwords(strtolower($validated['nama'])),
-                'email' => $nis . '@ngelaras.my.id',
-                'password' => Hash::make($nis), // Set password sebagai NIS
-                'role' => 'siswa',
-                'nis' => $nis,
-            ]);
-
-            DB::commit();
-
-            // buat siswa baru dan relasikan dengan user
-            $siswa = Siswa::create([
-                'nama' => ucwords(strtolower($validated['nama'])),
-                'alamat' => $validated['alamat'],
-                'status' => $validated['status'],
-                'tanggal_terdaftar' => $tanggal_terdaftar,
-                'user_id' => $user->id,
-            ]);
-
-            DB::commit();
-
-            Log::info('New siswa created', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $siswa->id,
-                'siswa_data' => $siswa->toArray()
-            ]);
-
+            $siswa = $this->siswaService->store($request->validated());
             return response()->json([
                 'message' => 'Siswa berhasil ditambahkan',
                 'data' => new SiswaResource($siswa)
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->errorResponse('Gagal menambahkan siswa', $e, ['request_data' => $request->all()]);
@@ -287,21 +224,11 @@ class SiswaController extends Controller
     {
         try {
             $siswa = Siswa::findOrFail($id);
-            DB::beginTransaction();
-            $oldData = $siswa->toArray();
-            $siswa->update($request->validated());
-            DB::commit();
-
-            Log::info('Siswa updated', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id,
-                'old_data' => $oldData,
-                'new_data' => $siswa->fresh()->toArray()
-            ]);
+            $updated = $this->siswaService->update($siswa, $request->validated());
 
             return response()->json([
                 'message' => 'Siswa berhasil diperbarui',
-                'data' => new SiswaResource($siswa->fresh())
+                'data' => new SiswaResource($updated)
             ]);
 
         } catch (\Exception $e) {
@@ -317,16 +244,7 @@ class SiswaController extends Controller
     {
         try {
             $siswa = Siswa::findOrFail($id);
-            DB::beginTransaction();
-            $siswa->delete();
-            DB::commit();
-
-            Log::info('Siswa soft deleted', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id,
-                'siswa_data' => $siswa->toArray()
-            ]);
-
+            $this->siswaService->delete($siswa);
             return response()->json(['message' => 'Siswa berhasil dihapus']);
 
         } catch (\Exception $e) {
@@ -345,14 +263,7 @@ class SiswaController extends Controller
             if (!$siswa->trashed()) {
                 return response()->json(['message' => 'Siswa tidak dalam status terhapus'], 400);
             }
-            DB::beginTransaction();
-            $siswa->restore();
-            DB::commit();
-
-            Log::info('Siswa restored', [
-                'user_id' => auth()->id(),
-                'siswa_id' => $id
-            ]);
+            $this->siswaService->restore($siswa);
 
             return response()->json([
                 'message' => 'Siswa berhasil dipulihkan',
@@ -382,59 +293,22 @@ class SiswaController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
-            $ids = $request->ids;
-            $action = $request->action;
-            $affectedCount = 0;
-
-            switch ($action) {
-                case 'activate':
-                    $affectedCount = Siswa::whereIn('id', $ids)->update(['status' => true]);
-                    $message = "{$affectedCount} siswa berhasil diaktifkan";
-                    break;
-
-                case 'deactivate':
-                    $affectedCount = Siswa::whereIn('id', $ids)->update(['status' => false]);
-                    $message = "{$affectedCount} siswa berhasil dinonaktifkan";
-                    break;
-
-                case 'delete':
-                    $affectedCount = Siswa::whereIn('id', $ids)->delete(); // Soft delete
-                    $message = "{$affectedCount} siswa berhasil dihapus";
-                    break;
-
-                case 'restore':
-                    $affectedCount = Siswa::withTrashed()->whereIn('id', $ids)->restore();
-                    $message = "{$affectedCount} siswa berhasil dipulihkan";
-                    break;
-            }
+            $affectedCount = $this->siswaService->bulkAction(
+                $request->action,
+                $request->ids
+            );
 
             DB::commit();
 
-            // Log::info('Bulk action performed on siswa', [
-            //     'user_id' => auth()->id(),
-            //     'action' => $action,
-            //     'ids' => $ids,
-            //     'affected_count' => $affectedCount
-            // ]);
-
             return response()->json([
-                'message' => $message,
+                'message' => "{$affectedCount} siswa berhasil di {$request->action}",
                 'affected_count' => $affectedCount
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            // Log::error('Error performing bulk action', [
-            //     'user_id' => auth()->id(),
-            //     'action' => $request->action,
-            //     'ids' => $request->ids,
-            //     'error' => $e->getMessage()
-            // ]);
 
             return response()->json([
                 'message' => 'Gagal melakukan operasi bulk',
@@ -449,7 +323,7 @@ class SiswaController extends Controller
     public function getCountSiswa()
     {
         try {
-            $count = Siswa::count();
+            $count = $this->siswaService->getCount();
 
             return response()->json([
                 'count' => $count
@@ -474,17 +348,13 @@ class SiswaController extends Controller
     public function getCountSiswaAktif()
     {
         try {
-            $count = Siswa::where('status', true)->count();
+            $count = $this->siswaService->getCountAktif();
 
             return response()->json([
                 'count' => $count
             ]);
 
         } catch (\Exception $e) {
-            // Log::error('Error getting active siswa count', [
-            //     'user_id' => auth()->id(),
-            //     'error' => $e->getMessage()
-            // ]);
 
             return response()->json([
                 'message' => 'Gagal mengambil jumlah siswa aktif',
@@ -499,27 +369,10 @@ class SiswaController extends Controller
     public function getTrashed(Request $request)
     {
         try {
-            $query = Siswa::onlyTrashed();
-
-            // Apply search filter
-            if ($request->filled('search')) {
-                $searchTerm = $request->search;
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->where('nama', 'like', "%{$searchTerm}%")
-                        ->orWhere('alamat', 'like', "%{$searchTerm}%");
-                });
-            }
-
-            $perPage = min($request->get('per_page', 10), 100);
-            $siswa = $query->orderBy('deleted_at', 'desc')->paginate($perPage);
-
-            return response()->json($siswa);
+            $result = $this->siswaService->getTrashed($request->all());
+            return response()->json($result);
 
         } catch (\Exception $e) {
-            // Log::error('Error getting trashed siswa', [
-            //     'user_id' => auth()->id(),
-            //     'error' => $e->getMessage()
-            // ]);
 
             return response()->json([
                 'message' => 'Gagal mengambil data siswa yang dihapus',
@@ -550,25 +403,12 @@ class SiswaController extends Controller
             $siswa->forceDelete();
 
             DB::commit();
-
-            // Log::info('Siswa force deleted', [
-            //     'user_id' => auth()->id(),
-            //     'siswa_id' => $id
-            // ]);
-
             return response()->json([
                 'message' => 'Siswa berhasil dihapus permanen'
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            // Log::error('Error force deleting siswa', [
-            //     'user_id' => auth()->id(),
-            //     'siswa_id' => $id,
-            //     'error' => $e->getMessage()
-            // ]);
-
             return response()->json([
                 'message' => 'Gagal menghapus permanen siswa',
                 'error' => $e->getMessage()

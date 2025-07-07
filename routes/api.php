@@ -49,6 +49,9 @@ Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
 
         Route::delete('/{id}', [AbsensiController::class, 'destroy'])
             ->name('api.admin.absensi.destroy');
+
+        Route::get('riwayat-siswa/{user_id}', [AbsensiController::class, 'riwayatSiswa'])
+            ->name('api.admin.absensi.riwayat-siswa');
     });
 
     // Siswa - Updated routes for simplified structure
@@ -69,6 +72,8 @@ Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
             ->name('api.admin.siswa.trashed');
         Route::post('bulk-action', [SiswaController::class, 'bulkAction'])
             ->name('api.admin.siswa.bulk-action');
+        Route::get('get-by-user/{id}', [SiswaController::class, 'getById'])
+            ->name('api.admin.siswa.get-by-user');
 
         // Resource routes KEDUA
         Route::apiResource('/', SiswaController::class, [

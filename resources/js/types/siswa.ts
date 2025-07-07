@@ -1,3 +1,7 @@
+export interface SiswaResponse {
+    data: Siswa;
+}
+
 export interface Siswa {
     id: number;
     nama: string;

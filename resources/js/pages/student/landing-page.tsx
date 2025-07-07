@@ -6,7 +6,7 @@ import { Github, LogIn, } from "lucide-react";
 
 export default function LandingPage() {
     const { auth } = usePage<SharedData>().props;
-
+    console.log('Auth:', auth.user ? auth.user.role : null);
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-950 flex flex-col transition-colors">
             <Head>
@@ -31,10 +31,27 @@ export default function LandingPage() {
                     <ModeToggle />
                     <Button asChild >
                         {auth.user ? (
-                            <Link href={route('siswa.dashboard')} className="flex items-center">
-                                <LogIn className="w-4 h-4 mr-2" />
-                                Masuk
-                            </Link>
+                            <>
+                                {/* Jika sudah login, arahkan ke dashboard siswa atau admin panel*/}
+                                {auth.user ? (
+                                    (auth.user.role === 'admin' || auth.user.role === 'pengurus') ? (
+                                        <Link href={route('atmin.dashboard')} className="flex items-center">
+                                            <LogIn className="w-4 h-4 mr-2" />
+                                            Masuk Admin/Pengurus
+                                        </Link>
+                                    ) : (
+                                        <Link href={route('siswa.dashboard')} className="flex items-center">
+                                            <LogIn className="w-4 h-4 mr-2" />
+                                            Masuk
+                                        </Link>
+                                    )
+                                ) : (
+                                    <Link href={route('login')} className="flex items-center">
+                                        <LogIn className="w-4 h-4 mr-2" />
+                                        Coba Sekarang
+                                    </Link>
+                                )}
+                            </>
                         ) : (
                             <Link href={route('login')} className="flex items-center">
                                 <LogIn className="w-4 h-4 mr-2" />
@@ -58,10 +75,25 @@ export default function LandingPage() {
                 <div className="flex gap-4 justify-center mb-12">
                     <Button asChild size="lg">
                         {auth.user ? (
-                            <Link href={route('siswa.dashboard')} className="flex items-center">
-                                <LogIn className="w-4 h-4 mr-2" />
-                                Masuk
-                            </Link>
+                            <>
+                                {/* Jika sudah login, arahkan ke dashboard siswa atau admin panel*/}
+                                {auth.user && (auth.user.role === 'admin' || auth.user.role === 'pengurus') ? (
+                                    <Link href={route('atmin.dashboard')} className="flex items-center">
+                                        <LogIn className="w-4 h-4 mr-2" />
+                                        Masuk Admin/Pengurus
+                                    </Link>
+                                ) : auth.user ? (
+                                    <Link href={route('siswa.dashboard')} className="flex items-center">
+                                        <LogIn className="w-4 h-4 mr-2" />
+                                        Masuk
+                                    </Link>
+                                ) : (
+                                    <Link href={route('login')} className="flex items-center">
+                                        <LogIn className="w-4 h-4 mr-2" />
+                                        Coba Sekarang
+                                    </Link>
+                                )}
+                            </>
                         ) : (
                             <Link href={route('login')} className="flex items-center">
                                 <LogIn className="w-4 h-4 mr-2" />

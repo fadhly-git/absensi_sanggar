@@ -50,7 +50,7 @@ export default function Password() {
 
     return (
         <StudentLayout breadcrumbs={breadcrumbs}>
-            <Head title="Profile settings" />
+            <Head title="Profile settings siswa" />
 
             <StudentSettingsLayout>
                 <div className="space-y-6">

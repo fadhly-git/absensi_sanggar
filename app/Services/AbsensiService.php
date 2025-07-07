@@ -33,15 +33,27 @@ class AbsensiService
                 ->toArray();
 
             if (!empty($sudahAbsenIds)) {
-                // Bisa throw error atau skip siswa yang sudah absen
                 throw new \Exception('Beberapa siswa sudah absen di tanggal ini: ' . implode(', ', $sudahAbsenIds));
-                // Atau: $dataToInsert = array_filter($dataToInsert, fn($d) => !in_array($d['id_siswa'], $sudahAbsenIds));
             }
 
             // Hapus data lama hanya untuk siswa yang akan diupdate
             Absensi::where('tanggal', $tanggal)
                 ->whereIn('id_siswa', $siswaIds)
                 ->delete();
+
+            // --- BONUS LOGIC START ---
+            foreach ($dataToInsert as &$data) {
+                // Hitung total absensi sebelum hari ini
+                $count = Absensi::where('id_siswa', $data['id_siswa'])
+                    ->where('tanggal', '<', $tanggal)
+                    ->count();
+
+                // Jika absensi ke-(kelipatan 21), set bonus true
+                $nextCount = $count + 1; // +1 karena absensi hari ini
+                $data['bonus'] = ($nextCount % 21 === 0);
+            }
+            unset($data);
+            // --- BONUS LOGIC END ---
 
             // Bulk insert dengan chunk untuk performa
             $chunks = array_chunk($dataToInsert, 100);

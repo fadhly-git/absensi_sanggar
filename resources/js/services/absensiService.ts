@@ -5,6 +5,26 @@ import type { AbsensiWeeklyFilter, AbsensiWeeklyResponse } from '@/types/absensi
 export class AbsensiService {
     private static readonly baseUrl = '/api/admin/absensi';
 
+    static async getRiwayatSiswa(
+        userId: number,
+        mode: 'bulan' | 'tahun' = 'bulan',
+        bulan?: string | number,
+        tahun?: string | number
+    ): Promise<any> {
+        try {
+            const params = new URLSearchParams();
+            params.append('mode', mode);
+            if (bulan) params.append('bulan', String(bulan));
+            if (tahun) params.append('tahun', String(tahun));
+
+            const { data } = await apiClient.get(`${AbsensiService.baseUrl}/riwayat-siswa/${userId}?${params.toString()}`);
+            return data;
+        } catch (error) {
+            console.error('Error fetching attendance history:', error);
+            throw error;
+        }
+    }
+
     static async getWeeklyReport(params: AbsensiWeeklyFilter): Promise<AbsensiWeeklyResponse> {
         try {
             // Logika Anda untuk membuat flatParams mungkin ada di sini atau tidak, tidak masalah.
