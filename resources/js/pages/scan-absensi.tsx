@@ -1,8 +1,8 @@
 import { DebugAuth } from '@/components/debug-auth';
 import { useAuth } from '@/hooks/useAuth';
 import AppLayout from '@/layouts/app-layout';
-import { SharedData, type BreadcrumbItem } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';
+import { Head } from '@inertiajs/react';
 import AbsensiQrScanner from './qr-scanner';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -14,10 +14,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function AdminDashboard() {
     const { loading: authLoading, isAuthenticated } = useAuth();
-    const page = usePage<SharedData>();
-    const { auth } = page.props;
 
-    console.log('auth', auth);
 
     if (authLoading) {
         return (
