@@ -39,11 +39,9 @@ class AbsensiService
             // --- BONUS LOGIC START ---
             $now = now();
             foreach ($dataToInsert as &$data) {
-                $count = Absensi::where('id_siswa', $data['id_siswa'])
-                    ->where('tanggal', '<', $tanggal)
-                    ->count();
-                $nextCount = $count + 1;
-                $data['bonus'] = ($nextCount % 21 === 0);
+                $count = Absensi::where('id_siswa', $data['id_siswa'])->count();
+                // Bonus jika absensi yang sudah ada (sebelum insert) + 1 adalah kelipatan 21
+                $data['bonus'] = (($count + 1) % 21 === 0);
                 $data['created_at'] = $now;
                 $data['updated_at'] = $now;
             }
@@ -56,7 +54,8 @@ class AbsensiService
 
             return [
                 'total_inserted' => count($dataToInsert),
-                'tanggal' => $tanggal
+                'tanggal' => $tanggal,
+                'bonus' => $dataToInsert[0]['bonus'] ?? false
             ];
         });
     }

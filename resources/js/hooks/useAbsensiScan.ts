@@ -1,23 +1,28 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation } from '@tanstack/react-query';
 import { scanAbsensi, ScanResult } from '@/services/absensiScanService';
 
 export function useAbsensiScan() {
-    const mutation = useMutation<ScanResult, Error, string>({
+    const mutation = useMutation<ScanResult, Error, any[]>({
         mutationFn: scanAbsensi,
     });
 
-    const handleScan = (qrText: string) => {
+    const handleScan = (payload: any[]) => {
         try {
-            const parsed = JSON.parse(qrText);
-            if (!parsed.id) {
+            // Validasi payload: pastikan array dan ada rawValue
+            if (
+                !Array.isArray(payload) ||
+                !payload[0] ||
+                !payload[0].rawValue
+            ) {
                 mutation.reset();
-                mutation.mutateAsync(''); // error, kirim string kosong
+                mutation.mutateAsync([]); // kirim array kosong untuk error
                 return;
             }
-            mutation.mutate(qrText); // kirim string JSON QR utuh
+            mutation.mutate(payload); // kirim array ke backend
         } catch {
             mutation.reset();
-            mutation.mutateAsync(''); // error
+            mutation.mutateAsync([]); // error
         }
     };
 
