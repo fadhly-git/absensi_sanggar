@@ -1,6 +1,6 @@
 import InputError from '@/components/input-error';
-import StudentLayout from '@/layouts/student-layout';
-import StudentSettingsLayout from '@/layouts/settings/layout';
+import AppLayout from '@/layouts/app-layout';
+import SettingsLayout from '@/layouts/settings/layout';
 import { type BreadcrumbItem } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
@@ -49,16 +49,16 @@ export default function Password() {
     };
 
     return (
-        <StudentLayout breadcrumbs={breadcrumbs}>
-            <Head title="Profile settings siswa" />
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Profile settings" />
 
-            <StudentSettingsLayout>
+            <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Perbarui Password" description=" Pastikan akun Anda menggunakan password yang panjang dan acak agar tetap aman" />
+                    <HeadingSmall title="Update password" description="Ensure your account is using a long, random password to stay secure" />
 
                     <form onSubmit={updatePassword} className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="current_password">Password saat ini</Label>
+                            <Label htmlFor="current_password">Current password</Label>
 
                             <Input
                                 id="current_password"
@@ -75,7 +75,7 @@ export default function Password() {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password baru</Label>
+                            <Label htmlFor="password">New password</Label>
 
                             <Input
                                 id="password"
@@ -92,7 +92,7 @@ export default function Password() {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password_confirmation">Konfirmasi password</Label>
+                            <Label htmlFor="password_confirmation">Confirm password</Label>
 
                             <Input
                                 id="password_confirmation"
@@ -108,7 +108,7 @@ export default function Password() {
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <Button disabled={processing}>Simpan password</Button>
+                            <Button disabled={processing}>Save password</Button>
 
                             <Transition
                                 show={recentlySuccessful}
@@ -122,7 +122,7 @@ export default function Password() {
                         </div>
                     </form>
                 </div>
-            </StudentSettingsLayout>
-        </StudentLayout>
+            </SettingsLayout>
+        </AppLayout>
     );
 }

@@ -30,8 +30,7 @@ class ProfileController extends Controller
                 'status' => $request->session()->get('status'),
             ]);
         }
-        return Inertia::render('student/landing-page', );
-
+        return Inertia::render('studen/landing-page');
     }
 
     /**
