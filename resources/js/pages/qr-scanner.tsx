@@ -24,7 +24,6 @@ export default function AbsensiQrScanner() {
 
     useEffect(() => {
         dateRef.current = date;
-        console.log('Selected date:', dateRef.current);
         reset();
     }, [date]);
 
@@ -69,7 +68,6 @@ export default function AbsensiQrScanner() {
             resetTimeout();
         }
     }, [loading]);
-    console.log('result:', result);
 
     useEffect(() => {
         if (result) {
@@ -110,7 +108,6 @@ export default function AbsensiQrScanner() {
                 rawValue: scanResult[0].rawValue,
                 tanggal: dateRef.current ? dateRef.current.toISOString().slice(0, 10) : undefined,
             }];
-            console.log('Scan Result:', payload);
             handleScan(payload);
             resetTimeout();
         }
