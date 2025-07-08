@@ -44,7 +44,7 @@ class GenerateQrSiswa extends Command
                 'nama' => $siswa->nama,
                 'tanggal_terdaftar' => $siswa->tanggal_terdaftar,
             ];
-            $fileName = "qr_siswa/siswa_{$siswa->id}.png";
+            $fileName = "qr_siswa/siswa_{$siswa->id}_{$siswa->nama}.png";
             Storage::disk('public')->put($fileName, QrCode::format('png')
                 ->size(300)
                 ->generate(json_encode($qrData)));

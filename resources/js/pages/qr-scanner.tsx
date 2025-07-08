@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { DatePicker } from '@/components/costum-date-picker';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAbsensiScan } from '@/hooks/useAbsensiScan';
 import { Scanner } from '@yudiel/react-qr-scanner';
-import { Camera, CameraOff, CheckCircle2, RefreshCw, Repeat, XCircle } from 'lucide-react';
+import { Camera, CameraOff, CheckCircle2, PartyPopperIcon, RefreshCw, Repeat, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export default function AbsensiQrScanner() {
@@ -16,7 +17,15 @@ export default function AbsensiQrScanner() {
     const [cameraActive, setCameraActive] = useState(true);
     const [timeoutActive, setTimeoutActive] = useState(false);
     const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
+    const today = new Date(); // Get today's date as a Date object
+    const [date, setDate] = useState<Date | undefined>(today); // Menambahkan tipe undefined
+    const dateRef = useRef<Date | undefined>(date);
+    const bonusAudio = useRef<HTMLAudioElement | null>(null);
 
+    useEffect(() => {
+        dateRef.current = date;
+        reset();
+    }, [date]);
 
     // Reset timeout when there's activity
     const resetTimeout = () => {
@@ -62,10 +71,17 @@ export default function AbsensiQrScanner() {
 
     useEffect(() => {
         if (result) {
-            if (result.success) successAudio.current?.play();
-            else errorAudio.current?.play();
+            if (result.bonus && bonusAudio.current) {
+                bonusAudio.current.currentTime = 0;
+                bonusAudio.current.play();
+            } else if (result.success && successAudio.current) {
+                successAudio.current.currentTime = 0;
+                successAudio.current.play();
+            } else if (errorAudio.current) {
+                errorAudio.current.currentTime = 0;
+                errorAudio.current.play();
+            }
 
-            // Auto reset result setelah 2 detik
             autoResetRef.current = setTimeout(() => {
                 reset();
             }, 2000);
@@ -76,8 +92,9 @@ export default function AbsensiQrScanner() {
     }, [result, reset]);
 
     useEffect(() => {
-        if (isError) {
-            errorAudio.current?.play()
+        if (isError && errorAudio.current) {
+            errorAudio.current.currentTime = 0;
+            errorAudio.current.play();
             const timer = setTimeout(() => {
                 reset();
             }, 2000);
@@ -86,12 +103,14 @@ export default function AbsensiQrScanner() {
     }, [isError, reset]);
 
     const handleScanResult = (scanResult: any) => {
-        // console.log('Scan result:', scanResult);
         if (scanResult && scanResult.length > 0 && !loading && cameraActive) {
-            handleScan(scanResult[0].rawValue);
-            resetTimeout(); // Reset timeout on successful scan
+            const payload = [{
+                rawValue: scanResult[0].rawValue,
+                tanggal: dateRef.current ? dateRef.current.toISOString().slice(0, 10) : undefined,
+            }];
+            handleScan(payload);
+            resetTimeout();
         }
-        // resetTimeout();
     };
 
     return (
@@ -100,6 +119,10 @@ export default function AbsensiQrScanner() {
                 <CardHeader className="text-center w-full">
                     <CardTitle className="text-2xl font-bold text-indigo-700">Absensi Siswa QR</CardTitle>
                     <p className="text-muted-foreground mt-1 text-sm">Arahkan QR ke kamera, scan otomatis</p>
+                    <div className="w-full max-w-xs mx-auto">
+                        <h1 className="text-xl font-bold">Pilih Tanggal</h1>
+                        <DatePicker date={date} setDate={setDate} />
+                    </div>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center w-full">
                     {/* Alert notification always rendered, but only visible if result */}
@@ -113,16 +136,23 @@ export default function AbsensiQrScanner() {
                                 </AlertDescription>
                             </Alert>
                         )}
-                        {result && (
+                        {result && result.bonus && (
+                            <Alert variant="info" className="flex flex-col items-center w-full max-w-xs mx-auto border-green-500 bg-green-50">
+                                <span className="mb-1 text-yellow-400">
+                                    {/* Emoji bintang atau bisa pakai ikon lain */}
+                                    <PartyPopperIcon size={48} className="mb-1 text-yellow-500" />
+                                </span>
+                                <AlertTitle className="text-lg font-bold text-green-700">Selamat! Bonus Kehadiran 🎉</AlertTitle>
+                                <AlertDescription className="text-center text-green-700">{result.message}</AlertDescription>
+                            </Alert>
+                        )}
+                        {result && !result.bonus && (
                             <Alert variant={result.success ? 'default' : 'destructive'} className="flex flex-col items-center w-full max-w-xs mx-auto">
-                                {result.success ? (
+                                {result.success && (
                                     <CheckCircle2 size={48} className="mb-1 text-green-500" />
-                                ) : (
-                                    <XCircle size={48} className="mb-1 text-red-500" />
                                 )}
                                 <AlertTitle className="text-lg font-bold">{result.success ? 'Berhasil!' : 'Gagal'}</AlertTitle>
                                 <AlertDescription className="text-center">{result.message}</AlertDescription>
-                                {/* Tombol Scan Lagi dihilangkan karena auto reset */}
                             </Alert>
                         )}
                     </div>
@@ -178,6 +208,7 @@ export default function AbsensiQrScanner() {
                     {/* Audio notification */}
                     <audio ref={successAudio} src="/sounds/success.mp3" preload="auto" />
                     <audio ref={errorAudio} src="/sounds/wrong.mp3" preload="auto" />
+                    <audio ref={bonusAudio} src="/sounds/bonus.wav" preload="auto" />
                 </CardContent>
             </Card>
         </div>

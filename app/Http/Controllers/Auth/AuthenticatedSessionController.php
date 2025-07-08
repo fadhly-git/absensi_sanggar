@@ -21,11 +21,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(Request $request)
     {
-        Log::info('Login page accessed', [
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'session_id' => $request->session()->getId(),
-        ]);
+        // Log::info('Login page accessed', [
+        //     'ip' => $request->ip(),
+        //     'user_agent' => $request->userAgent(),
+        //     'session_id' => $request->session()->getId(),
+        // ]);
         $user = Auth::user();
         // Jika sudah login, redirect ke halaman dashboard yang sesuai
         if ($user) {

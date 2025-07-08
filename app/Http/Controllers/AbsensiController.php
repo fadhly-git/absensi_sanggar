@@ -82,7 +82,7 @@ class AbsensiController extends Controller
     public function absensiQr(Request $request)
     {
 
-        $scanResult = $request->input(0);
+        $scanResult = $request->input(0) ?? $request->all()[0] ?? null;
 
         if (!$scanResult || !isset($scanResult['rawValue'])) {
             return response()->json(['success' => false, 'message' => 'Data QR tidak valid'], 400);
@@ -99,7 +99,7 @@ class AbsensiController extends Controller
             return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan'], 404);
         }
 
-        $tanggal = "2025-07-09";
+        $tanggal = $scanResult['tanggal'] ?? date('Y-m-d');
 
         $absenHariIni = \App\Models\Absensi::where('id_siswa', $siswa->id)
             ->where('tanggal', $tanggal)
@@ -120,7 +120,10 @@ class AbsensiController extends Controller
         ];
 
         try {
-            $this->absensiService->saveQrRequest($dataToInsert);
+            $result = $this->absensiService->saveQrRequest($dataToInsert);
+
+            // Ambil data bonus dari $dataToInsert (karena sudah diisi sebelum insert)
+            $isBonus = $result['bonus'] ?? false;
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -130,7 +133,11 @@ class AbsensiController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Absensi berhasil dicatat'
+            'message' => $isBonus
+                ? 'Absensi berhasil dicatat. Selamat, Anda mendapatkan BONUS!'
+                : 'Absensi berhasil dicatat',
+            'bonus' => $isBonus,
+
         ], 201);
     }
 
@@ -139,7 +146,7 @@ class AbsensiController extends Controller
      */
     public function store(StoreAbsensiRequest $request): JsonResponse
     {
-        \Log::info('Creating absensi with data:', $request->all());
+        // \Log::info('Creating absensi with data:', $request->all());
         try {
             $result = $this->absensiService->saveFromRequest($request);
 

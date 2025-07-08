@@ -220,7 +220,7 @@ export function InsertDataDH() {
                                                         <td className="w-fit px-4 capitalize">{row.nama}</td>
                                                         <td className="px-2 capitalize">{row.alamat}</td>
                                                         <td className="px-2 py-2">
-                                                            <Button variant="success" onClick={() => handleAddData(row)}>
+                                                            <Button onClick={() => handleAddData(row)}>
                                                                 Add
                                                             </Button>
                                                         </td>
