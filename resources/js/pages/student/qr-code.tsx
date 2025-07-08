@@ -14,7 +14,7 @@ export default function QrCodePage() {
     const { loading: authLoading, isAuthenticated } = useAuth();
     const page = usePage<SharedData>();
     const { auth } = page.props;
-    console.log('auth', auth);
+    // console.log('auth', auth);
 
     if (authLoading) {
         return (

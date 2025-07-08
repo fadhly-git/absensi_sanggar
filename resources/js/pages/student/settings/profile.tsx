@@ -71,12 +71,12 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                             <Label htmlFor="alamat">Alamat Rumah</Label>
 
                             <Input
-                                id="name"
+                                id="alamat"
                                 className="mt-1 block w-full"
                                 value={data.alamat}
                                 onChange={(e) => setData('alamat', e.target.value)}
                                 required
-                                autoComplete="name"
+                                autoComplete="alamat"
                                 placeholder="Alamat lengkap rumah Anda"
                             />
 
@@ -132,7 +132,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 leave="transition ease-in-out"
                                 leaveTo="opacity-0"
                             >
-                                <p className="text-sm text-neutral-600">Saved</p>
+                                <p className="text-sm text-neutral-600">Tersimpan</p>
                             </Transition>
                         </div>
                     </form>

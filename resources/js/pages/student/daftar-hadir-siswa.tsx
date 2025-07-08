@@ -36,8 +36,6 @@ export default function DaftarHadirSiswa() {
         };
     });
 
-    console.log('DaftarHadirSiswa render', filter);
-
     const isMonthMode = filter.mode === 'bulan';
 
     //data fetching
@@ -197,9 +195,8 @@ const FilterBar = React.memo(({ isMonthMode, onModeChange, onDateChange, name }:
                     <div className="flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 md:gap-2 dark:bg-black/20">
                         <button
                             type="button"
-                            className={`rounded px-2 py-0.5 text-xs font-semibold transition md:text-sm ${
-                                !isMonthMode ? 'bg-primary text-primary-foreground' : 'text-gray-700 dark:text-gray-300'
-                            }`}
+                            className={`rounded px-2 py-0.5 text-xs font-semibold transition md:text-sm ${!isMonthMode ? 'bg-primary text-primary-foreground' : 'text-gray-700 dark:text-gray-300'
+                                }`}
                             aria-pressed={!isMonthMode}
                             tabIndex={0}
                             onClick={() => onModeChange(false)}
@@ -209,9 +206,8 @@ const FilterBar = React.memo(({ isMonthMode, onModeChange, onDateChange, name }:
                         <Switch checked={isMonthMode} onCheckedChange={onModeChange} className="mx-1" aria-label="Pilih Bulan/Tahun" />
                         <button
                             type="button"
-                            className={`rounded px-2 py-0.5 text-xs font-semibold transition md:text-sm ${
-                                isMonthMode ? 'bg-primary text-primary-foreground' : 'text-gray-700 dark:text-gray-300'
-                            }`}
+                            className={`rounded px-2 py-0.5 text-xs font-semibold transition md:text-sm ${isMonthMode ? 'bg-primary text-primary-foreground' : 'text-gray-700 dark:text-gray-300'
+                                }`}
                             aria-pressed={isMonthMode}
                             tabIndex={0}
                             onClick={() => onModeChange(true)}

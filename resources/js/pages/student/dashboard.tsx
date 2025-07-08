@@ -88,7 +88,6 @@ interface StudentData {
 
 // --------- Tambahan dari layout gambar (mirip GitHub profile) ---------
 const ProfileSidebar = ({ data }: StudentData) => {
-    console.log('ProfileSidebar data:', data);
     const editProfile = true; // Ganti true jika user bisa edit profil
     const getInitials = useInitials();
 
@@ -133,9 +132,9 @@ const ProfileSidebar = ({ data }: StudentData) => {
                         <Calendar1 className="h-3 w-3" />
                         {data?.tanggal_terdaftar
                             ? formatDistanceToNow(new Date(data.tanggal_terdaftar), {
-                                  addSuffix: true,
-                                  locale: localeId,
-                              })
+                                addSuffix: true,
+                                locale: localeId,
+                            })
                             : '-'}
                     </span>
                 </div>

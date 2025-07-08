@@ -47,12 +47,12 @@ class AbsensiReportService
                     }
                     $current->addDay();
                 }
-                $absensi = Absensi::where('id_siswa', $siswa->id)
-                    ->whereIn('tanggal', $sundays)
-                    ->get()
-                    ->keyBy('tanggal');
                 foreach ($sundays as $tanggal) {
-                    $record = $absensi->get($tanggal);
+                    $startOfWeek = Carbon::parse($tanggal)->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
+                    $endOfWeek = Carbon::parse($tanggal)->endOfWeek(Carbon::SUNDAY)->format('Y-m-d');
+                    $record = Absensi::where('id_siswa', $siswa->id)
+                        ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
+                        ->first();
                     $result['absensi'][$m][$tanggal] = $record ? ($record->bonus ? 'B' : 'H') : 'T';
                 }
             }
@@ -68,13 +68,13 @@ class AbsensiReportService
                 }
                 $current->addDay();
             }
-            $absensi = Absensi::where('id_siswa', $siswa->id)
-                ->whereIn('tanggal', $sundays)
-                ->get()
-                ->keyBy('tanggal');
             $result['absensi'][(int) $bulan] = [];
             foreach ($sundays as $tanggal) {
-                $record = $absensi->get($tanggal);
+                $startOfWeek = Carbon::parse($tanggal)->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
+                $endOfWeek = Carbon::parse($tanggal)->endOfWeek(Carbon::SUNDAY)->format('Y-m-d');
+                $record = Absensi::where('id_siswa', $siswa->id)
+                    ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
+                    ->first();
                 $result['absensi'][(int) $bulan][$tanggal] = $record ? ($record->bonus ? 'B' : 'H') : 'T';
             }
         }

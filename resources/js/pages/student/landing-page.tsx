@@ -6,7 +6,6 @@ import { Github, LogIn, } from "lucide-react";
 
 export default function LandingPage() {
     const { auth } = usePage<SharedData>().props;
-    console.log('Auth:', auth.user ? auth.user.role : null);
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-950 flex flex-col transition-colors">
             <Head>
