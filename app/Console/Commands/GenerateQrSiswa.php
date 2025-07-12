@@ -35,10 +35,10 @@ class GenerateQrSiswa extends Command
         $count = 0;
 
         foreach ($siswas as $siswa) {
-            // if ($siswa->qrcode_path) {
-            //     $this->info('siswa' . $siswa->nama . ' sudah punya Qr' . $siswa->qrcode_path);
-            //     continue;
-            // }
+            if ($siswa->qrcode_path) {
+                $this->info('siswa' . $siswa->nama . ' sudah punya Qr' . $siswa->qrcode_path);
+                continue;
+            }
             $qrData = [
                 'id' => $siswa->id,
                 'nama' => $siswa->nama,

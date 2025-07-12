@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Facades\Storage;
 
 class SiswaService
 {
@@ -84,6 +86,20 @@ class SiswaService
                 'tanggal_terdaftar' => $tanggal_terdaftar,
                 'user_id' => $user->id,
             ]);
+
+            $qrData = [
+                'id' => $siswa->id,
+                'nama' => $siswa->nama,
+                'tanggal_terdaftar' => $siswa->tanggal_terdaftar,
+            ];
+            $fileName = "qr_siswa/siswa_{$siswa->id}_{$siswa->nama}.png";
+            Storage::disk('public')->put($fileName, QrCode::format('png')
+                ->size(300)
+                ->generate(json_encode($qrData)));
+
+            // Update the siswa record with the QR code path
+            $siswa->qrcode_path = $fileName;
+            $siswa->save();
 
             return $siswa;
         });

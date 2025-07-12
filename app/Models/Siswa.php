@@ -17,6 +17,7 @@ class Siswa extends Model
         'status',
         'tanggal_terdaftar',
         'user_id',
+        'qrcode_path',
     ];
 
     protected $casts = [
