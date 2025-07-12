@@ -1,7 +1,7 @@
 import { Link, Head, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookCheck, Users, Wallet } from 'lucide-react';
+import { BookCheck, LogIn, Users, Wallet } from 'lucide-react';
 import { SharedData } from '@/types';
 
 // Definisikan tipe props yang diterima dari Laravel
@@ -55,13 +55,23 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
                                 Kelola data siswa, absensi, dan keuangan sanggar Anda dengan mudah di satu tempat yang terpusat dan modern.
                             </p>
                             <div className="mt-8 flex justify-center gap-4">
+                                {/* Jika sudah login, arahkan ke dashboard siswa atau admin panel*/}
                                 {auth.user ? (
-                                    <Link href={route('atmin.dashboard')}>
-                                        <Button size="lg">Dashboard</Button>
-                                    </Link>
+                                    (auth.user.role === 'admin' || auth.user.role === 'pengurus') ? (
+                                        <Link href={route('atmin.dashboard')} className="flex items-center">
+                                            <LogIn className="w-4 h-4 mr-2" />
+                                            Masuk Admin/Pengurus
+                                        </Link>
+                                    ) : (
+                                        <Link href={route('siswa.dashboard')} className="flex items-center">
+                                            <LogIn className="w-4 h-4 mr-2" />
+                                            Masuk
+                                        </Link>
+                                    )
                                 ) : (
-                                    <Link href={route('login')}>
-                                        <Button size="lg">Mulai Kelola</Button>
+                                    <Link href={route('login')} className="flex items-center">
+                                        <LogIn className="w-4 h-4 mr-2" />
+                                        Coba Sekarang
                                     </Link>
                                 )}
                             </div>

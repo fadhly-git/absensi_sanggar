@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+
     return Inertia::render('student/landing-page');
 });
 
