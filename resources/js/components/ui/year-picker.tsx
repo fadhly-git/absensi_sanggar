@@ -21,6 +21,7 @@ type YearCalProps = {
     minDate?: Date;
     maxDate?: Date;
     disabledDates?: Date[];
+    availableYears?: number[];
 };
 
 type ButtonVariant = "default" | "outline" | "ghost" | "link" | "destructive" | "secondary" | null | undefined;
@@ -31,6 +32,7 @@ function YearPicker({
     minDate,
     maxDate,
     disabledDates,
+    availableYears,
     callbacks,
     onDecadeBackward,
     onDecadeForward,
@@ -52,6 +54,7 @@ function YearPicker({
                         minDate={minDate}
                         maxDate={maxDate}
                         disabledDates={disabledDates}
+                        availableYears={availableYears}
                     ></YearCal>
                 </div>
             </div>
@@ -59,7 +62,7 @@ function YearPicker({
     );
 }
 
-function YearCal({ selectedYear, onYearSelect, callbacks, variant, minDate, maxDate, disabledDates, onDecadeBackward, onDecadeForward }: YearCalProps) {
+function YearCal({ selectedYear, onYearSelect, callbacks, variant, minDate, maxDate, disabledDates, availableYears, onDecadeBackward, onDecadeForward }: YearCalProps) {
     const [year, setYear] = React.useState<number>(selectedYear?.getFullYear() ?? new Date().getFullYear());
     const [decadeStart, setDecadeStart] = React.useState<number>(Math.floor(year / 10) * 10);
 
@@ -113,7 +116,8 @@ function YearCal({ selectedYear, onYearSelect, callbacks, variant, minDate, maxD
                                         disabled={
                                             (maxDate ? y > maxDate?.getFullYear() : false) ||
                                             (minDate ? y < minDate?.getFullYear() : false) ||
-                                            (disabledDatesMapped ? disabledDatesMapped?.some((d) => d.year == y) : false)
+                                            (disabledDatesMapped ? disabledDatesMapped?.some((d) => d.year == y) : false) ||
+                                            (availableYears && availableYears.length > 0 ? !availableYears.includes(y) : false)
                                         }
                                         className={cn(
                                             buttonVariants({ variant: year == y ? variant?.calendar?.selected ?? "default" : variant?.calendar?.main ?? "ghost" }),

@@ -23,62 +23,116 @@ class AbsensiReportService
      */
     public function getRiwayatSiswa($user_id, $mode = 'tahun', $bulan = null, $tahun = null): array
     {
-        $bulan = $bulan ?? now()->format('m');
-        $tahun = $tahun ?? now()->format('Y');
+        try {
+            $bulan = $bulan ?? now()->format('m');
+            $tahun = $tahun ?? now()->format('Y');
 
-        $siswa = Siswa::with('user')->where('user_id', $user_id)->firstOrFail();
+            $siswa = Siswa::with('user')->where('user_id', $user_id)->firstOrFail();
 
-        $result = [
-            'siswa_id' => $siswa->id,
-            'siswa_nama' => $siswa->user->name ?? $siswa->nama,
-            'siswa_alamat' => $siswa->alamat,
-            'siswa_status' => $siswa->status,
-        ];
+            $result = [
+                'siswa_id' => $siswa->id,
+                'siswa_nama' => $siswa->user->name ?? 'N/A',
+                'siswa_alamat' => $siswa->alamat,
+                'siswa_status' => $siswa->status,
+            ];
 
-        if ($mode === 'tahun') {
-            for ($m = 1; $m <= 12; $m++) {
-                $sundays = [];
-                $start = Carbon::createFromDate($tahun, $m, 1)->startOfMonth();
-                $end = (clone $start)->endOfMonth();
-                $current = $start->copy();
-                while ($current->lte($end)) {
-                    if ($current->dayOfWeek === Carbon::SUNDAY) {
-                        $sundays[] = $current->format('Y-m-d');
+            if ($mode === 'tahun') {
+                // OPTIMASI: Ambil semua tanggal unik untuk tahun ini (SYSTEM-WIDE)
+                // Menggunakan cache 10 menit karena tanggal jarang berubah
+                $cacheKey = "all_attendance_dates_{$tahun}";
+                $allUniqueDates = \Cache::remember($cacheKey, 600, function () use ($tahun) {
+                    return Absensi::whereYear('tanggal', $tahun)
+                        ->distinct()
+                        ->orderBy('tanggal')
+                        ->pluck('tanggal')
+                        ->map(fn($date) => Carbon::parse($date)->format('Y-m-d'))
+                        ->toArray();
+                });
+
+                // Ambil absensi siswa ini untuk tahun ini
+                $siswaAbsensi = Absensi::where('id_siswa', $siswa->id)
+                    ->whereYear('tanggal', $tahun)
+                    ->get()
+                    ->keyBy(fn($record) => Carbon::parse($record->tanggal)->format('Y-m-d'));
+
+                // Group by month
+                $result['absensi'] = [];
+                foreach ($allUniqueDates as $tanggal) {
+                    $bulanNum = (int) Carbon::parse($tanggal)->format('m');
+
+                    // Cek apakah siswa hadir di tanggal ini
+                    if (isset($siswaAbsensi[$tanggal])) {
+                        $result['absensi'][$bulanNum][$tanggal] = $siswaAbsensi[$tanggal]->bonus ? 'B' : 'H';
+                    } else {
+                        $result['absensi'][$bulanNum][$tanggal] = 'T'; // Tidak hadir
                     }
-                    $current->addDay();
                 }
-                foreach ($sundays as $tanggal) {
-                    $startOfWeek = Carbon::parse($tanggal)->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
-                    $endOfWeek = Carbon::parse($tanggal)->endOfWeek(Carbon::SUNDAY)->format('Y-m-d');
-                    $record = Absensi::where('id_siswa', $siswa->id)
-                        ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
-                        ->first();
-                    $result['absensi'][$m][$tanggal] = $record ? ($record->bonus ? 'B' : 'H') : 'T';
+
+                // Pastikan semua bulan ada key (walaupun kosong)
+                for ($m = 1; $m <= 12; $m++) {
+                    if (!isset($result['absensi'][$m])) {
+                        $result['absensi'][$m] = [];
+                    }
+                }
+            } else {
+                // OPTIMASI: mode bulanan - ambil tanggal unik untuk bulan ini (SYSTEM-WIDE)
+                $cacheKey = "all_attendance_dates_{$tahun}_{$bulan}";
+                $allUniqueDates = \Cache::remember($cacheKey, 600, function () use ($tahun, $bulan) {
+                    return Absensi::whereYear('tanggal', $tahun)
+                        ->whereMonth('tanggal', $bulan)
+                        ->distinct()
+                        ->orderBy('tanggal')
+                        ->pluck('tanggal')
+                        ->map(fn($date) => Carbon::parse($date)->format('Y-m-d'))
+                        ->toArray();
+                });
+
+                // Ambil absensi siswa ini untuk bulan ini
+                $siswaAbsensi = Absensi::where('id_siswa', $siswa->id)
+                    ->whereYear('tanggal', $tahun)
+                    ->whereMonth('tanggal', $bulan)
+                    ->get()
+                    ->keyBy(fn($record) => Carbon::parse($record->tanggal)->format('Y-m-d'));
+
+                $result['absensi'][(int) $bulan] = [];
+                foreach ($allUniqueDates as $tanggal) {
+                    // Cek apakah siswa hadir di tanggal ini
+                    if (isset($siswaAbsensi[$tanggal])) {
+                        $result['absensi'][(int) $bulan][$tanggal] = $siswaAbsensi[$tanggal]->bonus ? 'B' : 'H';
+                    } else {
+                        $result['absensi'][(int) $bulan][$tanggal] = 'T'; // Tidak hadir
+                    }
                 }
             }
-        } else {
-            // mode bulanan (default)
-            $sundays = [];
-            $start = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
-            $end = (clone $start)->endOfMonth();
-            $current = $start->copy();
-            while ($current->lte($end)) {
-                if ($current->dayOfWeek === Carbon::SUNDAY) {
-                    $sundays[] = $current->format('Y-m-d');
-                }
-                $current->addDay();
-            }
-            $result['absensi'][(int) $bulan] = [];
-            foreach ($sundays as $tanggal) {
-                $startOfWeek = Carbon::parse($tanggal)->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
-                $endOfWeek = Carbon::parse($tanggal)->endOfWeek(Carbon::SUNDAY)->format('Y-m-d');
-                $record = Absensi::where('id_siswa', $siswa->id)
-                    ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
-                    ->first();
-                $result['absensi'][(int) $bulan][$tanggal] = $record ? ($record->bonus ? 'B' : 'H') : 'T';
-            }
+
+            return $result;
+        } catch (\Exception $e) {
+            \Log::error('Error in getRiwayatSiswa: ' . $e->getMessage());
+            throw $e;
         }
-        return $result;
+    }
+
+    /**
+     * Get available years (SYSTEM-WIDE - years where ANY student has attendance records)
+     * Dengan cache untuk mengurangi beban database
+     */
+    public function getAvailableYears($user_id): array
+    {
+        try {
+            // Cache system-wide available years selama 1 jam
+            $cacheKey = "system_available_years";
+            $years = \Cache::remember($cacheKey, 3600, function () {
+                return Absensi::selectRaw('DISTINCT YEAR(tanggal) as year')
+                    ->orderBy('year', 'desc')
+                    ->pluck('year')
+                    ->toArray();
+            });
+
+            return $years;
+        } catch (\Exception $e) {
+            \Log::error('Error in getAvailableYears: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**

@@ -13,6 +13,7 @@ interface MonthPickerProps {
 
 interface YearPickerProps {
     onYearChange: (year: string) => void;
+    availableYears?: number[];
 }
 
 export function CustomMonthPicker({ onMonthChange }: MonthPickerProps) {
@@ -42,7 +43,7 @@ export function CustomMonthPicker({ onMonthChange }: MonthPickerProps) {
     );
 }
 
-export function CustomYearPicker({ onYearChange }: YearPickerProps) {
+export function CustomYearPicker({ onYearChange, availableYears = [] }: YearPickerProps) {
     const [date, setDate] = React.useState<Date>();
     const formattedDate = date ? format(date, 'yyyy') : null;
 
@@ -62,7 +63,11 @@ export function CustomYearPicker({ onYearChange }: YearPickerProps) {
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                    <YearPicker onYearSelect={setDate} selectedYear={date} />
+                    <YearPicker
+                        onYearSelect={setDate}
+                        selectedYear={date}
+                        availableYears={availableYears}
+                    />
                 </PopoverContent>
             </Popover>
         </>

@@ -23,6 +23,9 @@ class ValidateSession
             $user = Auth::user() ?? Auth::guard('web')->user() ?? Auth::guard('sanctum')->user();
 
             if ($user) {
+                // Cleanup expired tokens for this user
+                $user->tokens()->where('expires_at', '<', now())->delete();
+
                 $expiresAt = $request->session()->get('session_expires_at');
 
                 // If no expiry set, create default
@@ -35,10 +38,10 @@ class ValidateSession
                     $request->session()->put('session_expires_at', $expiresAt);
                     $request->session()->put('login_time', now()->toISOString());
 
-                    // Log::info("Session expiry set for user: {$user->id}", [
-                    //     'expires_at' => $expiresAt,
-                    //     'is_remembered' => $isRemembered
-                    // ]);
+                    Log::info("Session expiry set for user: {$user->id}", [
+                        'expires_at' => $expiresAt,
+                        'is_remembered' => $isRemembered
+                    ]);
                 }
 
                 try {
@@ -46,9 +49,12 @@ class ValidateSession
                         $isRemembered = $request->session()->get('is_remembered', false);
                         $sessionType = $isRemembered ? '7 days' : '2 hours';
 
-                        // Log::info("Session expired for user: {$user->id} (Type: {$sessionType})");
+                        Log::info("Session expired for user: {$user->id} (Type: {$sessionType})", [
+                            'expired_at' => $expiresAt,
+                            'current_time' => now()->toISOString()
+                        ]);
 
-                        // Session expired, logout user
+                        // Session expired, logout user and cleanup tokens
                         $user->tokens()->delete();
                         Auth::logout();
                         Auth::guard('web')->logout();
@@ -61,7 +67,9 @@ class ValidateSession
                             return response()->json(['message' => 'Session expired'], 401);
                         }
 
-                        return redirect('/login')->with('status', 'Session expired. Please login again.');
+                        return redirect('/login')
+                            ->with('status', 'Session expired. Please login again.')
+                            ->withCookie(cookie()->forget('auth_token'));
                     }
                 } catch (\Exception $e) {
                     Log::error('Error validating session', [

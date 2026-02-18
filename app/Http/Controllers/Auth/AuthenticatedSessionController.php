@@ -50,11 +50,30 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request)
     {
-        $request->authenticate();
-        $request->session()->regenerate();
+        try{
+            $request->authenticate();
 
         // Generate token untuk pengguna yang berhasil login
         $user = Auth::user();
+
+        // \Log::info('Login attempt', [
+        //     'user_id' => $user ? $user->id : null,
+        //     'email' => $user ? $user->email : null,
+        //     'session_id' => $request->session()->getId(),
+        //     'session_driver' => config('session.driver'),
+        //     'session_table' => config('session.table'),
+        //     'session_data' => $request->session()->all(),
+        //     'ip' => $request->ip(),
+        //     'user_agent' => $request->userAgent(),
+        // ]);
+
+        // Hapus semua token lama user ini untuk mencegah multiple session
+        // Hanya hapus token yang sudah expired atau akan expired dalam 1 menit
+        $user->tokens()->where(function ($query) {
+            $query->where('expires_at', '<', now())
+                ->orWhereNull('expires_at')
+                ->orWhere('expires_at', '<', now()->addMinute());
+        })->delete();
 
         // Buat token dengan expiry berdasarkan remember me
         $remember = $request->boolean('remember', false);
@@ -77,9 +96,9 @@ class AuthenticatedSessionController extends Controller
         $token = $user->createToken('api-token', ['*'], $tokenExpiry)->plainTextToken;
 
         // Set session expiry time untuk tracking manual dengan format yang konsisten
-        $request->session()->put('session_expires_at', $expiresAt->toISOString());
+        $request->session()->put('session_expires_at', $expiresAt->toRfc3339String());
         $request->session()->put('is_remembered', $remember);
-        $request->session()->put('login_time', now()->toISOString());
+        $request->session()->put('login_time', now()->toRfc3339String());
 
         // Redirect seperti biasa
         $redirectRoute = 'login';
@@ -96,9 +115,20 @@ class AuthenticatedSessionController extends Controller
                 $sessionLifetime,
                 '/',
                 env('SESSION_DOMAIN', null),
-                env('SESSION_SECURE_COOKIE', false), // Lebih baik gunakan variabel .env
-                true  // Sangat direkomendasikan untuk keamanan (HttpOnly)
+                env('SESSION_SECURE_COOKIE', false),
+                false  // HttpOnly=false so JavaScript can read it for API calls
             ));
+        } catch (\Exception $e) {
+            Log::error('Authentication error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'ip' => $request->ip(),
+                'session_id' => $request->session()->getId(),
+            ]);
+
+            return redirect()->route('login')
+                ->withErrors(['login' => 'Authentication failed. Please try again.']);
+        }
     }
 
     /**
@@ -107,9 +137,15 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         if ($user = Auth::user()) {
+            // Hapus semua token user
             $user->tokens()->delete();
+
+            // Log::info('User logged out', [
+            //     'user_id' => $user->id,
+            //     'email' => $user->email,
+            // ]);
         } else {
-            Log::error('Token not found for the current user.');
+            Log::warning('Logout attempt without authenticated user.');
         }
 
         // Hapus session pengguna
@@ -128,102 +164,94 @@ class AuthenticatedSessionController extends Controller
      */
     public function checkSession(Request $request)
     {
-
-
-        // Check multiple authentication guards
-        $webAuth = Auth::guard('web')->check();
-        $sanctumAuth = Auth::guard('sanctum')->check();
-
-        // Check if user is authenticated via any method
-        if (!Auth::check() && !$webAuth && !$sanctumAuth) {
-            Log::warning('No authentication found');
-            return response()->json([
-                'valid' => false,
-                'message' => 'Not authenticated',
-                'debug' => [
-                    'auth_check' => Auth::check(),
-                    'web_guard' => $webAuth,
-                    'sanctum_guard' => $sanctumAuth,
-                    'session_id' => $request->session()->getId(),
-                ]
-            ], 401);
-        }
-
-        // Get user from available guard
-        $user = Auth::user() ?? Auth::guard('web')->user() ?? Auth::guard('sanctum')->user();
-
-        if (!$user) {
-            Log::error('User authenticated but user object is null');
-            return response()->json([
-                'valid' => false,
-                'message' => 'User object not found'
-            ], 401);
-        }
-
-        // Get session data
-        $expiresAt = $request->session()->get('session_expires_at');
-        $isRemembered = $request->session()->get('is_remembered', false);
-        $loginTime = $request->session()->get('login_time');
-
-
-        // Handle missing session expiry
-        if (!$expiresAt) {
-            Log::warning('Missing session expiry, creating new one', [
-                'user_id' => $user->id,
-                'is_remembered' => $isRemembered
-            ]);
-
-            // Set default expiry based on remembered status
-            if ($isRemembered) {
-                $expiresAt = now()->addDays(7)->toISOString();
-            } else {
-                $expiresAt = now()->addHours(2)->toISOString();
-            }
-
-            // Update session
-            $request->session()->put('session_expires_at', $expiresAt);
-            $request->session()->put('login_time', now()->toISOString());
-        }
-
-        // Check if session is expired
         try {
-            $expiryTime = Carbon::parse($expiresAt);
+            // Wrap whole handler to log unexpected exceptions and return JSON instead of server 500
 
-            if (now()->greaterThan($expiryTime)) {
+            // Hanya gunakan guard 'web' untuk konsistensi
+            $user = Auth::guard('web')->user();
 
-                // Don't destroy session here, let middleware handle it
+            if (!$user) {
                 return response()->json([
                     'valid' => false,
-                    'message' => 'Session expired',
-                    'expired_at' => $expiresAt,
-                    'current_time' => now()->toISOString()
+                    'message' => 'Not authenticated',
+                    'session_id' => $request->session()->getId(),
                 ], 401);
             }
-        } catch (\Exception $e) {
-            Log::error('Error parsing session expiry', [
-                'error' => $e->getMessage(),
-                'expires_at' => $expiresAt
+
+            // Get session data
+            $expiresAt = $request->session()->get('session_expires_at');
+            $isRemembered = $request->session()->get('is_remembered', false);
+            $loginTime = $request->session()->get('login_time');
+
+            // Handle missing session expiry
+            if (!$expiresAt) {
+                // Set default expiry based on remembered status
+                if ($isRemembered) {
+                    $expiresAt = now()->addDays(7)->toRfc3339String();
+                } else {
+                    $expiresAt = now()->addHours(2)->toRfc3339String();
+                }
+
+                // Update session
+                $request->session()->put('session_expires_at', $expiresAt);
+                $request->session()->put('login_time', now()->toRfc3339String());
+                $request->session()->save(); // PENTING: Save session setelah update
+            }
+
+            // Check if session is expired
+            try {
+                $expiryTime = Carbon::parse($expiresAt);
+
+                if (now()->greaterThan($expiryTime)) {
+                    return response()->json([
+                        'valid' => false,
+                        'message' => 'Session expired',
+                        'expired_at' => $expiresAt,
+                        'current_time' => now()->toRfc3339String()
+                    ], 401);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error parsing session expiry', [
+                    'error' => $e->getMessage(),
+                    'expires_at' => $expiresAt
+                ]);
+
+                // Reset session expiry
+                $expiresAt = now()->addHours(2)->toRfc3339String();
+                $request->session()->put('session_expires_at', $expiresAt);
+                $request->session()->save(); // PENTING: Save session setelah update
+            }
+
+            return response()->json([
+                'valid' => true,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ],
+                'expires_at' => $expiresAt,
+                'is_remembered' => $isRemembered,
+                'login_time' => $loginTime,
+                'current_time' => now()->toRfc3339String(),
+                'session_id' => $request->session()->getId(),
             ]);
 
-            // Reset session expiry
-            $expiresAt = now()->addHours(2)->toISOString();
-            $request->session()->put('session_expires_at', $expiresAt);
+        } catch (\Exception $e) {
+            Log::error('checkSession unexpected error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'ip' => $request->ip(),
+                'session_id' => $request->session()->getId(),
+                'headers' => $request->headers->all(),
+            ]);
+
+            return response()->json([
+                'valid' => false,
+                'message' => 'Server error while checking session',
+                'error' => $e->getMessage(),
+            ], 500);
         }
 
-        $responseData = [
-            'valid' => true,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
-            'expires_at' => $expiresAt,
-            'is_remembered' => $isRemembered,
-            'login_time' => $loginTime,
-            'current_time' => now()->toISOString(),
-            'session_id' => $request->session()->getId(),
-        ];
-
-        return response()->json($responseData);
     }
 }

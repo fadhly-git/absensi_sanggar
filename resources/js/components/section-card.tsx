@@ -84,7 +84,7 @@ export function SectionCards({ summary, isLoading }: SectionCardsProps) {
     return (
         <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
             <CardSaldo data={summary?.saldo} isLoading={isLoading} />
-            <CardSiswaBerangkat data={summary?.siswa_berangkat} isLoading={isLoading} />
+            {/* <CardSiswaBerangkat data={summary?.siswa_berangkat} isLoading={isLoading} />
             <SimpleStatCard
                 title="Siswa Aktif"
                 value={summary?.siswa_aktif}
@@ -96,7 +96,7 @@ export function SectionCards({ summary, isLoading }: SectionCardsProps) {
                 value={summary?.total_siswa}
                 icon={<School className="h-4 w-4 text-muted-foreground" />}
                 isLoading={isLoading}
-            />
+            /> */}
         </div>
     );
 }

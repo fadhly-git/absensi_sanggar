@@ -51,7 +51,7 @@ export function DebugAuth() {
     };
 
     return (
-        <div className="bg-gray-100 p-4 rounded-lg mt-4 dark:bg-gray-800 mx-auto w-full">
+        <div className="bg-background p-4 rounded-lg mt-4 mx-auto w-full">
             <h3 className="font-bold mb-2">Debug Authentication</h3>
 
             <Button onClick={checkAuth} disabled={loading} className="mb-4">
@@ -59,7 +59,7 @@ export function DebugAuth() {
             </Button>
 
             {debugData && (
-                <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-96">
+                <pre className="text-xs bg-card p-2 rounded overflow-auto max-h-96">
                     {JSON.stringify(debugData, null, 2)}
                 </pre>
             )}

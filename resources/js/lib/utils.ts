@@ -51,3 +51,11 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
         timeout = setTimeout(() => func(...args), wait);
     };
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const getMetaValue = (value: any): number => {
+    if (Array.isArray(value) && value.length > 0) {
+        return Number(value[0]);
+    }
+    return Number(value) || 0;  // fallback ke 0 kalau invalid
+};

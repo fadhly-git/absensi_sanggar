@@ -30,8 +30,15 @@ export class SiswaService {
             params.append('page', page.toString());
             params.append('per_page', perPage.toString());
 
+            // Normalize filters to match backend field names
+            const normalizedFilters: Record<string, any> = { ...(filters || {}) };
+            // Frontend uses 'nama' but backend expects 'nama_user'
+            if (normalizedFilters.sortBy === 'nama') {
+                normalizedFilters.sortBy = 'nama_user';
+            }
+
             // Properly handle filter parameters
-            Object.entries(filters).forEach(([key, value]) => {
+            Object.entries(normalizedFilters).forEach(([key, value]) => {
                 if (value !== undefined && value !== null && value !== '' && value !== 'all') {
                     params.append(key, String(value));
                 }

@@ -1,43 +1,95 @@
+import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { CameraIcon, CircleDollarSignIcon, DatabaseZap, FileUser, FingerprintIcon, Layout } from 'lucide-react';
+import {
+    Layout,
+    Users,
+    User,
+    CalendarCheck,
+    QrCode,
+    CreditCard,
+    Tag,
+    Package,
+    ShoppingCart,
+    RefreshCw,
+    Receipt,
+} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        url: 'atmin.dashboard',
+        url: route('atmin.dashboard'),
         icon: Layout,
     },
     {
-        title: 'Siswa',
-        url: 'atmin.siswa',
-        icon: FileUser,
+        title: 'Siswa Management',
+        icon: Users,
+        url: route('atmin.siswa'),
+        items: [
+            {
+                title: 'Siswa',
+                url: route('atmin.siswa'),
+                icon: User,
+            },
+            {
+                title: 'Daftar Hadir',
+                url: route('atmin.daftar-hadir'),
+                icon: CalendarCheck,
+            },
+            {
+                title: 'Scan QR Absensi',
+                url: route('atmin.scan-absensi'),
+                icon: QrCode,
+            },
+            {
+                title: 'Keuangan',
+                url: route('atmin.keuangan'),
+                icon: CreditCard,
+            },
+        ],
     },
     {
-        title: 'Daftar Hadir',
-        url: 'atmin.daftar-hadir',
-        icon: FingerprintIcon,
-    },
-    {
-        title: 'Scan QR Absensi',
-        url: 'atmin.scan-absensi',
-        icon: CameraIcon,
-    },
-    {
-        title: 'keuangan',
-        url: 'atmin.keuangan',
-        icon: CircleDollarSignIcon,
+        title: 'Event',
+        url: '',
+        icon: Tag,
+        items: [
+            {
+                title: 'Produk Event',
+                url: route('atmin.event.products'),
+                icon: Package,
+            },
+            {
+                title: 'Pesanan',
+                url: route('atmin.event.orders'),
+                icon: ShoppingCart,
+            },
+            {
+                title: 'Bukti Pembayaran',
+                url: route('atmin.event.payment-proofs'),
+                icon: Receipt,
+            }
+        ],
     },
     {
         title: 'System Cache Clear',
-        url: 'atmin.system.clear-cache',
-        icon: DatabaseZap,
+        url: route('atmin.system.clear-cache'),
+        icon: RefreshCw,
     },
 ];
+
+const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
     return (
@@ -59,6 +111,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
+                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

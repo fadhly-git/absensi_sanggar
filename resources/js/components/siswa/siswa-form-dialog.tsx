@@ -7,6 +7,8 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
+    DialogFooter,
 } from '@/components/ui/dialog';
 import {
     Form,
@@ -84,20 +86,21 @@ export function SiswaFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="w-full sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>
-                        {siswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}
-                    </DialogTitle>
+                    <DialogTitle>{siswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}</DialogTitle>
+                    <DialogDescription>
+                        Isi data siswa dengan lengkap. Gunakan informasi yang akurat untuk pelaporan.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <FormField
                             control={form.control}
                             name="nama"
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="sm:col-span-2">
                                     <FormLabel>Nama Lengkap *</FormLabel>
                                     <FormControl>
                                         <Input
@@ -113,9 +116,32 @@ export function SiswaFormDialog({
 
                         <FormField
                             control={form.control}
+                            name="status"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col justify-center items-start sm:col-span-1">
+                                    <FormLabel className="text-sm">Status Aktif</FormLabel>
+                                    <div className="flex items-center justify-between w-full">
+                                        <div className="text-sm text-muted-foreground">
+                                            Aktifkan jika siswa masih terdaftar
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={Boolean(field.value)}
+                                                onCheckedChange={(v) => field.onChange(Boolean(v))}
+                                                disabled={isLoading}
+                                                aria-label="Status aktif siswa"
+                                            />
+                                        </FormControl>
+                                    </div>
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
                             name="alamat"
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="sm:col-span-3">
                                     <FormLabel>Alamat Lengkap *</FormLabel>
                                     <FormControl>
                                         <Textarea
@@ -131,29 +157,7 @@ export function SiswaFormDialog({
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="status"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Status Aktif</FormLabel>
-                                        <div className="text-sm text-muted-foreground">
-                                            Siswa dapat mengikuti kegiatan sanggar dan dicatat absensinya
-                                        </div>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={isLoading}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-
-                        <div className="flex justify-end space-x-3 pt-4">
+                        <DialogFooter className="sm:col-span-3 flex justify-end gap-2">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -165,7 +169,7 @@ export function SiswaFormDialog({
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? 'Menyimpan...' : siswa ? 'Update' : 'Simpan'}
                             </Button>
-                        </div>
+                        </DialogFooter>
                     </form>
                 </Form>
             </DialogContent>

@@ -164,7 +164,7 @@ export const DataTableKeuangan = React.memo(({
                         disabled={deleteMutation.isPending}
                         className="h-8 w-8 p-0 rounded-full focus:ring-2 focus:ring-red-400"
                     >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4 text-white" />
                     </Button>
                 </div>
             ),
@@ -302,7 +302,7 @@ export const DataTableKeuangan = React.memo(({
                                 <Button
                                     variant="destructive"
                                     size="sm"
-                                    className="flex-1"
+                                    className="flex-1 text-white"
                                     onClick={() => handleDelete(row.id)}
                                     disabled={deleteMutation.isPending}
                                 >

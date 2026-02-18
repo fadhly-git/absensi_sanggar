@@ -7,10 +7,10 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\KeuanganController;
 
-// Session check route - PENTING: gunakan web middleware untuk session-based auth
+// Session check route - PENTING: tidak perlu middleware tambahan karena sudah ada di bootstrap/app.php
+// Route ini akan otomatis menggunakan 'statefulApi' dari bootstrap/app.php
 Route::get('check-session', [AuthenticatedSessionController::class, 'checkSession'])
-    ->name('api.check-session')
-    ->middleware(['web', 'auth']);
+    ->name('api.check-session');
 
 // User route untuk Sanctum token-based auth
 Route::get('/user', function (Request $request) {
@@ -21,8 +21,12 @@ Route::get('/user', function (Request $request) {
 Route::get('/absensi/weekly-report', [AbsensiController::class, 'generateWeeklyReport'])
     ->name('api.absensi.weekly-report');
 
+// Public endpoint for chart data (daily totals)
+Route::get('/absensi/get-diagram', [AbsensiController::class, 'getDiagram'])
+    ->name('api.absensi.get-diagram');
+
 // Admin API - PENTING: gunakan middleware yang konsisten
-Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
+Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
     // Dashboard
     Route::get('/dashboard/summary', [DashboardController::class, 'getSummary'])
         ->name('api.admin.dashboard.summary');
@@ -52,6 +56,9 @@ Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
 
         Route::get('riwayat-siswa/{user_id}', [AbsensiController::class, 'riwayatSiswa'])
             ->name('api.admin.absensi.riwayat-siswa');
+
+        Route::get('available-years/{user_id}', [AbsensiController::class, 'getAvailableYears'])
+            ->name('api.admin.absensi.available-years');
 
         // absensi qr
         Route::post('absensi-qr', [AbsensiController::class, 'absensiQr'])
@@ -109,6 +116,17 @@ Route::prefix('admin')->middleware(['web', 'auth:sanctum'])->group(function () {
         Route::get('saldo', [KeuanganController::class, 'getSaldo'])->name('saldo');
         Route::get('export', [KeuanganController::class, 'exportFinancialReport'])->name('export');
     });
+
+    // Event Products
+    Route::prefix('event')->name('api.admin.event.')->group(function () {
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Event\ProductController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Event\ProductController::class, 'store'])->name('store');
+            Route::put('{id}', [\App\Http\Controllers\Event\ProductController::class, 'update'])->name('update');
+            Route::delete('{id}', [\App\Http\Controllers\Event\ProductController::class, 'destroy'])->name('destroy');
+        });
+    });
 });
 
 require __DIR__ . '/siswaApi.php';
+// publicApi.php sudah di-load via bootstrap/app.php, jangan load 2x!

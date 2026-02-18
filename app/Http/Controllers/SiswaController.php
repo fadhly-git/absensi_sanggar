@@ -93,16 +93,19 @@ class SiswaController extends Controller
             $import = new SiswaImport();
             Excel::import($import, $request->file('file'));
 
+            // Generate QR codes untuk siswa yang baru diimport
+            $import->generateQrCodes();
+
             DB::commit();
 
-            // Log::info('Siswa data imported', [
-            //     'user_id' => auth()->id(),
-            //     'success_count' => $import->getSuccessCount(),
-            //     'failed_count' => $import->getFailedCount()
-            // ]);
+            Log::info('Siswa data imported with QR codes', [
+                'user_id' => auth()->id(),
+                'success_count' => $import->getSuccessCount(),
+                'failed_count' => $import->getFailedCount()
+            ]);
 
             return response()->json([
-                'message' => 'Data berhasil diimpor',
+                'message' => 'Data berhasil diimpor dan QR code telah dibuat',
                 'success' => $import->getSuccessCount(),
                 'failed' => $import->getFailedCount(),
                 'errors' => $import->getErrors()

@@ -25,15 +25,19 @@ export class AbsensiService {
         }
     }
 
+    static async getAvailableYears(userId: number): Promise<number[]> {
+        try {
+            const { data } = await apiClient.get(`${AbsensiService.baseUrl}/available-years/${userId}`);
+            return data.years || [];
+        } catch (error) {
+            console.error('Error fetching available years:', error);
+            return [];
+        }
+    }
+
     static async getWeeklyReport(params: AbsensiWeeklyFilter): Promise<AbsensiWeeklyResponse> {
         try {
-            // Logika Anda untuk membuat flatParams mungkin ada di sini atau tidak, tidak masalah.
-            // Yang penting adalah log sebelum apiClient.get
-
-            // Buat objek config untuk dikirim ke Axios
-            const axiosConfig = { params }; // atau { params: flatParams } sesuai logika Anda
-
-            // ↓↓↓ TAMBAHKAN LOG INI ↓↓↓
+            const axiosConfig = { params };
 
             const response = await apiClient.get(`${AbsensiService.baseUrl}/weekly-report`, axiosConfig);
 

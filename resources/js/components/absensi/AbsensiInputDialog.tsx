@@ -11,6 +11,7 @@ import {
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { SundayPicker } from "@/components/molecules/sunday-picker";
 
 interface Props {
     open: boolean;
@@ -33,6 +34,9 @@ export function AbsensiInputDialog({
     const [selected, setSelected] = useState<
         { id: number; nama: string; alamat: string; keterangan?: string; bonus?: boolean }[]
     >([]);
+
+    // Convert string date to Date object for SundayPicker
+    const tanggalDate = tanggal ? new Date(tanggal) : undefined;
 
     useEffect(() => {
         if (!open) {
@@ -122,14 +126,20 @@ export function AbsensiInputDialog({
                     </div>
                     {/* Kolom Kanan: Pilih tanggal */}
                     <div className="md:w-1/3 w-full">
-                        <Label htmlFor="tanggal" className="mb-1 block text-base font-medium">
-                            Pilih Tanggal
+                        <Label className="mb-2 block text-base font-medium">
+                            Pilih Tanggal Absensi
                         </Label>
-                        <Input
-                            id="tanggal"
-                            type="date"
-                            value={tanggal}
-                            onChange={(e) => setTanggal(e.target.value)}
+                        <SundayPicker
+                            id="absensi-dialog-date"
+                            name="absensi-dialog-date"
+                            value={tanggalDate}
+                            onChange={(date: Date | undefined) => {
+                                if (date) {
+                                    setTanggal(date.toISOString().slice(0, 10));
+                                }
+                            }}
+                            placeholder="Pilih hari Minggu"
+                            description="Absensi hanya dapat dilakukan pada hari Minggu"
                         />
                     </div>
                 </div>

@@ -39,51 +39,51 @@ export function SiswaStats() {
             title: 'Total Siswa',
             value: stats.total.toLocaleString('id-ID'),
             icon: Users,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-50',
+            iconBg: 'bg-primary/10',
+            iconColor: 'text-primary',
         },
         {
             title: 'Siswa Aktif',
             value: stats.aktif.toLocaleString('id-ID'),
             icon: UserCheck,
-            color: 'text-green-600',
-            bgColor: 'bg-green-50',
+            iconBg: 'bg-green-100 dark:bg-green-900/40',
+            iconColor: 'text-green-600 dark:text-green-400',
         },
         {
             title: 'Siswa Tidak Aktif',
             value: stats.tidak_aktif.toLocaleString('id-ID'),
             icon: UserX,
-            color: 'text-red-600',
-            bgColor: 'bg-red-50',
+            iconBg: 'bg-destructive/10',
+            iconColor: 'text-destructive',
         },
         {
             title: 'Tingkat Aktivasi',
             value: `${aktivasiRate.toFixed(1)}%`,
             icon: TrendingUp,
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-50',
+            iconBg: 'bg-purple-100 dark:bg-purple-900/40',
+            iconColor: 'text-purple-600 dark:text-purple-400',
         },
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {statCards.map((stat) => {
                 const Icon = stat.icon;
                 return (
-                    <Card key={stat.title}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-600">
-                                {stat.title}
-                            </CardTitle>
-                            <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                                <Icon className={`h-4 w-4 ${stat.color}`} />
+                    <Card key={stat.title} className="bg-card border border-border shadow-sm rounded-xl flex flex-col justify-between h-full">
+                        <CardHeader className="flex flex-row items-center gap-3 pb-2">
+                            <div className={`flex items-center justify-center rounded-lg ${stat.iconBg} w-12 h-12`}>
+                                <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+                            </div>
+                            <div className="flex-1">
+                                <CardTitle className="text-base font-semibold text-foreground mb-1">
+                                    {stat.title}
+                                </CardTitle>
+                                <div className="text-3xl font-extrabold text-foreground leading-tight">
+                                    {stat.value}
+                                </div>
                             </div>
                         </CardHeader>
-                        <CardContent>
-                            <div className={`text-2xl font-bold ${stat.color}`}>
-                                {stat.value}
-                            </div>
-                        </CardContent>
                     </Card>
                 );
             })}

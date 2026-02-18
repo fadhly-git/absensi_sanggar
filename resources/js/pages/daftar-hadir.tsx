@@ -3,12 +3,11 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { AbsensiHadirMingguIni } from "@/components/absensi/AbsensiHadirMingguIni";
-import { CustomMonthPicker, CustomYearPicker } from '@/components/month-picker';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-
-import { AbsensiWeeklyTable } from '@/components/absensi/AbsensiWeeklyTable';
+import { AbsensiFilterBar } from '@/components/absensi/AbsensiFilterBar';
+import { AbsensiStatsCard } from '@/components/absensi/AbsensiStatsCard';
+import { AbsensiCardGrid } from '@/components/absensi/AbsensiCardGrid';
+import { AbsensiPagination } from '@/components/absensi/AbsensiPagination';
+import { LoadingSpinner, ErrorMessage } from '@/components/absensi/AbsensiHelpers';
 import { AbsensiInputDialog } from '@/components/absensi/AbsensiInputDialog';
 
 import {
@@ -27,39 +26,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Daftar Hadir', href: 'daftar-hadir' },
 ];
 
-// Simple replacement components for missing imports
-const CardDH = ({
-    jumlah_siswa_m,
-    jumlah_siswa_s,
-    isLoading
-}: { jumlah_siswa_m: number; jumlah_siswa_s: number; isLoading: boolean }) => (
-    <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">Siswa Masuk</h3>
-            <p className="text-2xl font-bold text-green-900 dark:text-green-100">{isLoading ? '...' : jumlah_siswa_m}</p>
-        </div>
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-lg">
-            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Siswa Tidak berangkat</h3>
-            <p className="text-2xl font-bold text-red-900 dark:text-red-100">{isLoading ? '...' : jumlah_siswa_s}</p>
-        </div>
-    </div>
-);
-
-const LoadingSpinner = () => (
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-);
-
-const ErrorMessage = ({
-    message,
-    onRetry
-}: { message: string; onRetry: () => void }) => (
-    <div className="text-center py-8">
-        <p className="text-red-600 mb-4">{message}</p>
-        <button onClick={onRetry} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-            Coba Lagi
-        </button>
-    </div>
-);
+// components extracted to `components/absensi/*`
 
 export default function DaftarHadir() {
     // State management
@@ -76,7 +43,24 @@ export default function DaftarHadir() {
     const [searchValue, setSearchValue] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [showAddDialog, setShowAddDialog] = useState(false);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+
+    // Default ke hari Minggu terdekat
+    const getNearestSunday = (date = new Date()) => {
+        const dayOfWeek = date.getDay();
+        const sunday = new Date(date);
+
+        if (dayOfWeek === 0) {
+            return sunday.toISOString().slice(0, 10);
+        } else if (dayOfWeek <= 3) {
+            sunday.setDate(date.getDate() - dayOfWeek);
+        } else {
+            sunday.setDate(date.getDate() + (7 - dayOfWeek));
+        }
+
+        return sunday.toISOString().slice(0, 10);
+    };
+
+    const [selectedDate, setSelectedDate] = useState(getNearestSunday());
 
     // Debounced search
     const debouncedSearch = useDebounce(searchValue, 500);
@@ -245,75 +229,31 @@ export default function DaftarHadir() {
 
             <div className="flex h-full flex-col justify-center gap-2 rounded-xl p-4 w-full overflow-auto overflow-x-auto mx-auto">
                 {/* Filter Controls */}
-                <div className="bg-card p-6 rounded-lg shadow-sm container w-full">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        {/* Filter controls */}
-                        <div className="flex flex-col gap-2 sm:flex-row items-center justify-center w-full sm:gap-4">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">Tahun</span>
-                                <Switch
-                                    checked={filterMode === 'bulan'}
-                                    onCheckedChange={handleModeChange}
-                                />
-                                <span className="text-sm font-medium">Bulan</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {filterMode === 'bulan' ? (
-                                    <CustomMonthPicker
-                                        onMonthChange={handlePeriodeChange}
-                                    />
-                                ) : (
-                                    <CustomYearPicker
-                                        onYearChange={handlePeriodeChange}
-                                    />
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-                            <Input
-                                placeholder="Cari nama siswa..."
-                                value={searchValue}
-                                onChange={(e) => handleSearchChange(e.target.value)}
-                                className="w-full sm:w-64"
-                            />
-                            <Button
-                                variant="outline"
-                                onClick={handleExport}
-                                disabled={exportAbsensi.isPending || !!hasError}
-                                className="w-full sm:w-auto"
-                            >
-                                {exportAbsensi.isPending ? 'Mengekspor...' : 'Export'}
-                            </Button>
-                            <Button
-                                onClick={() => setShowAddDialog(true)}
-                                disabled={siswaLoading || !!siswaError}
-                                className="w-full sm:w-auto"
-                            >
-                                Tambah Data
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+                <AbsensiFilterBar
+                    filterMode={filterMode}
+                    periode={periode}
+                    onModeChange={handleModeChange}
+                    onPeriodeChange={handlePeriodeChange}
+                    searchValue={searchValue}
+                    onSearchChange={handleSearchChange}
+                    onExport={handleExport}
+                    onAdd={() => setShowAddDialog(true)}
+                    exportPending={exportAbsensi.isPending}
+                    siswaLoading={siswaLoading}
+                    hasError={!!hasError}
+                />
 
                 {/* Stats Card */}
                 <div className="bg-card p-6 rounded-lg shadow-sm">
                     {countError ? (
-                        <div className="text-red-600 text-center py-4">
-                            Gagal memuat statistik kehadiran
-                        </div>
+                        <div className="text-destructive text-center py-4">Gagal memuat statistik kehadiran</div>
                     ) : (
-                        <CardDH
-                            jumlah_siswa_m={attendanceCount.masuk}
-                            jumlah_siswa_s={attendanceCount.keluar}
-                            isLoading={countLoading}
-                        />
+                        <AbsensiStatsCard jumlah_masuk={attendanceCount.masuk} jumlah_tidak={attendanceCount.keluar} isLoading={countLoading} />
                     )}
                 </div>
 
-                {/* Data Table */}
-                <div className="flex-1 flex flex-col gap-4 rounded-xl container justify-center items-center w-full">
+                {/* Data Cards (responsive, no table) */}
+                <div className="flex-1 flex flex-col gap-6 w-full">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-12">
                             <LoadingSpinner />
@@ -327,66 +267,17 @@ export default function DaftarHadir() {
                         </div>
                     ) : (
                         <>
-                            <div className="relative flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-bsorder">
-                                <AbsensiWeeklyTable
-                                    data={tableData}
-                                    sundays={sundays}
-                                    isLoading={false}
-                                />
-                            </div>
+                            <AbsensiCardGrid data={tableData} sundays={sundays} isLoading={false} onEdit={(r) => alert(`Edit absensi: ${r.siswa_nama}`)} />
+
                             {/* Pagination */}
                             {pagination && pagination.totalPages > 1 && (
-                                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t container">
-                                    {/* Info - sembunyikan di layar sangat kecil */}
-                                    <div className="text-xs sm:text-sm text-muted-foreground text-center w-full sm:w-auto">
-                                        Menampilkan {((pagination.currentPage - 1) * pagination.perPage) + 1} - {Math.min(pagination.currentPage * pagination.perPage, pagination.totalRows)} dari {pagination.totalRows} data
-                                    </div>
-
-                                    {/* Pagination controls */}
-                                    <div className="w-full sm:w-auto">
-                                        <div className="flex flex-nowrap overflow-x-auto gap-1 sm:gap-2 items-center justify-center sm:justify-end">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handlePageChange(pagination.currentPage - 1)}
-                                                disabled={pagination.currentPage === 1 || isLoading}
-                                            >
-                                                Previous
-                                            </Button>
-
-                                            <div className="flex flex-nowrap gap-1">
-                                                {getPaginationRange(pagination.currentPage, pagination.totalPages, 5).map(page => (
-                                                    <Button
-                                                        key={page}
-                                                        variant={page === pagination.currentPage ? "default" : "outline"}
-                                                        size="sm"
-                                                        onClick={() => handlePageChange(page)}
-                                                        disabled={isLoading}
-                                                        className="min-w-[2.5rem] px-2 sm:px-3 whitespace-nowrap"
-                                                    >
-                                                        {page}
-                                                    </Button>
-                                                ))}
-                                            </div>
-
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handlePageChange(pagination.currentPage + 1)}
-                                                disabled={pagination.currentPage === pagination.totalPages || isLoading}
-                                            >
-                                                Next
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <AbsensiPagination pagination={pagination} isLoading={isLoading} onPageChange={handlePageChange} getPaginationRange={getPaginationRange} />
                             )}
+
                             <AbsensiHadirMingguIni
                                 startDate={sundays[0]}
                                 endDate={sundays[sundays.length - 1]}
                                 onEdit={absen => {
-                                    // Tampilkan dialog edit absensi, misal setEditAbsensi(absen)
-                                    // Atau tampilkan alert/console.log(absen) untuk sementara
                                     alert(`Edit absensi: ${absen.nama} (${absen.tanggal})`);
                                 }}
                             />

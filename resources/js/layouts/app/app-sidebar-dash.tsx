@@ -24,32 +24,26 @@ export default function AppSidebarLayout({ children, breadcrumbs = [] }: AppSide
         if (success) {
             toast.success(success, {
                 duration: 5000,
-                icon: '✅',
-                style: {
-                    background: '#f0f4f8',
-                    color: '#333',
-                },
+                // Hapus objek style, biarkan className yang bekerja
+                className: 'my-success-toast',
             });
         }
         if (error) {
             const errorMessage = Array.isArray(error) ? error.join(', ') : error;
             toast.error(errorMessage, {
                 duration: 5000,
-                icon: '❌',
-                style: {
-                    background: '#f8d7da',
-                    color: '#721c24',
-                },
+                className: 'my-error-toast',
             });
         }
-
     }, [success, error]);
+
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
-            <AppContent variant="sidebar">
+            <AppContent variant="sidebar" className="text-primary">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
-                <Toaster />
+                {/* Tambahkan richColors dan theme agar sinkron dengan sistem */}
+                <Toaster richColors closeButton theme="system" />
                 {children}
             </AppContent>
         </AppShell>

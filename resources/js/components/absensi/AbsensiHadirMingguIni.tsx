@@ -20,8 +20,10 @@ import {
     useReactTable,
     VisibilityState,
 } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -42,6 +44,7 @@ import {
     AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { LoadingSpinner, ErrorMessage } from '@/components/absensi/AbsensiHelpers';
 
 // For collapsible
 import {
@@ -49,7 +52,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2Icon } from "lucide-react";
 
 interface AbsensiHadir {
     id: number;
@@ -191,6 +194,7 @@ export const AbsensiHadirMingguIni: React.FC<Props> = ({
                                 <Button
                                     size="sm"
                                     variant="destructive"
+                                    className="text-white"
                                     onClick={() => setDeleteId(row.original.id)}
                                 >
                                     Hapus
@@ -270,11 +274,11 @@ export const AbsensiHadirMingguIni: React.FC<Props> = ({
         },
     });
 
-    if (loading) return <div className="p-4">Memuat data...</div>;
-    if (error) return <div className="p-4 text-red-600">{error}</div>;
+    if (loading) return <LoadingSpinner />;
+    if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
 
     return (
-        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 mt-4 border container w-full mx-auto">
+        <div className="bg-card rounded-xl p-4 mt-4 border container mx-auto">
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold">Absensi Siswa Hadir Minggu Ini</h2>
                 <Button
@@ -289,6 +293,7 @@ export const AbsensiHadirMingguIni: React.FC<Props> = ({
                     Reset Filter
                 </Button>
             </div>
+
             <div className="flex flex-col md:flex-row md:items-center gap-2 mb-4">
                 <Input
                     placeholder="Cari nama/alamat/keterangan..."
@@ -328,11 +333,12 @@ export const AbsensiHadirMingguIni: React.FC<Props> = ({
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+
             <div className="hidden md:block">
                 {table.getRowModel().rows.length === 0 ? (
                     <div className="text-gray-400">Belum ada siswa hadir minggu ini.</div>
                 ) : (
-                    <Table>
+                                <Table>
                         <TableHeader>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
@@ -374,51 +380,16 @@ export const AbsensiHadirMingguIni: React.FC<Props> = ({
                 )}
                 {/* Pagination */}
                 <div className="flex items-center justify-between mt-4 gap-2">
-                    <div className="flex-1 text-sm text-muted-foreground">
-                        {table.getFilteredRowModel().rows.length} data
-                    </div>
+                    <div className="flex-1 text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} data</div>
                     <div className="flex gap-1">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.setPageIndex(0)}
-                            disabled={!table.getCanPreviousPage()}
-                        >
-                            {"<<"}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.previousPage()}
-                            disabled={!table.getCanPreviousPage()}
-                        >
-                            {"<"}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.nextPage()}
-                            disabled={!table.getCanNextPage()}
-                        >
-                            {">"}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                            disabled={!table.getCanNextPage()}
-                        >
-                            {">>"}
-                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>{"<<"}</Button>
+                        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>{"<"}</Button>
+                        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>{">"}</Button>
+                        <Button variant="outline" size="sm" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>{">>"}</Button>
                     </div>
                 </div>
                 <div className="flex flex-row justify-end mt-1">
-                    <span className="text-sm">
-                        Halaman{" "}
-                        <strong>
-                            {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
-                        </strong>
-                    </span>
+                    <span className="text-sm">Halaman <strong>{table.getState().pagination.pageIndex + 1} / {table.getPageCount()}</strong></span>
                 </div>
             </div>
             {/* Mobile Card Mode with Collapsible */}
@@ -441,98 +412,61 @@ export const AbsensiHadirMingguIni: React.FC<Props> = ({
                                         }))
                                     }
                                 >
-                                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 flex flex-col gap-1 shadow border">
+                                    <Card className="p-0">
                                         <CollapsibleTrigger asChild>
-                                            <button
-                                                className="flex items-center justify-between w-full outline-none"
-                                                type="button"
-                                            >
-                                                <div className="flex flex-col text-left">
-                                                    <span className="block text-xs text-gray-400">Nama</span>
-                                                    <span className="font-bold">
-                                                        {absen.nama}
-                                                    </span>
+                                            <CardHeader className="flex items-center justify-between px-4 py-3 cursor-pointer">
+                                                <div>
+                                                    <CardTitle className="text-sm">{absen.nama}</CardTitle>
+                                                    <CardDescription className="text-xs text-muted-foreground">Nama</CardDescription>
                                                 </div>
                                                 {isOpen ? (
-                                                    <ChevronUp className="w-5 h-5 text-gray-500" />
+                                                    <ChevronUp className="w-5 h-5 text-muted-foreground" />
                                                 ) : (
-                                                    <ChevronDown className="w-5 h-5 text-gray-500" />
+                                                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
                                                 )}
-                                            </button>
+                                            </CardHeader>
                                         </CollapsibleTrigger>
                                         <CollapsibleContent>
-                                            <div className="mt-2 flex flex-col gap-1">
-                                                <div>
-                                                    <span className="block text-xs text-gray-400">Alamat</span>
-                                                    <span className="text-gray-800 dark:text-gray-200">
-                                                        {absen.alamat}
-                                                    </span>
+                                            <CardContent>
+                                                <div className="grid gap-2">
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground">Alamat</div>
+                                                        <div className="text-foreground">{absen.alamat}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground">Tanggal</div>
+                                                        <div className="text-foreground">{new Date(absen.tanggal).toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground">Keterangan</div>
+                                                        <div className="text-foreground">{absen.keterangan || "-"}</div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <span className="block text-xs text-gray-400">Tanggal</span>
-                                                    <span className="text-gray-700 dark:text-gray-300">
-                                                        {new Date(absen.tanggal).toLocaleDateString("id-ID", {
-                                                            year: "numeric",
-                                                            month: "long",
-                                                            day: "numeric",
-                                                        })}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <span className="block text-xs text-gray-400">Keterangan</span>
-                                                    <span className="text-gray-700 dark:text-gray-300">
-                                                        {absen.keterangan || "-"}
-                                                    </span>
-                                                </div>
-                                                <div className="flex gap-2 mt-1">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="flex-1"
-                                                        onClick={() => onEdit(absen)}
-                                                    >
-                                                        Edit
-                                                    </Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="destructive"
-                                                                className="flex-1"
-                                                                onClick={() => setDeleteId(absen.id)}
-                                                            >
-                                                                Hapus
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Hapus Absensi?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Apakah Anda yakin ingin menghapus absensi{" "}
-                                                                    <b>{absen.nama}</b> pada tanggal{" "}
-                                                                    <b>
-                                                                        {new Date(absen.tanggal).toLocaleDateString("id-ID")}
-                                                                    </b>
-                                                                    ? Tindakan ini tidak dapat dibatalkan.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel onClick={() => setDeleteId(null)}>
-                                                                    Batal
-                                                                </AlertDialogCancel>
-                                                                <AlertDialogAction
-                                                                    onClick={handleDelete}
-                                                                    className="bg-red-600 hover:bg-red-700"
-                                                                >
-                                                                    Hapus
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                            </div>
+                                            </CardContent>
+                                            <CardFooter className="flex gap-2">
+                                                <Button size="sm" variant="outline" className="flex-1" onClick={() => onEdit(absen)}>Edit</Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button size="sm" variant="destructive" className="flex-1" onClick={() => setDeleteId(absen.id)}>
+                                                            <Trash2Icon className="w-4 h-4 mr-1 text-white" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Hapus Absensi?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Apakah Anda yakin ingin menghapus absensi <b>{absen.nama}</b> pada tanggal <b>{new Date(absen.tanggal).toLocaleDateString("id-ID")}</b>? Tindakan ini tidak dapat dibatalkan.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel onClick={() => setDeleteId(null)}>Batal</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: 'destructive' })}>Hapus</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </CardFooter>
                                         </CollapsibleContent>
-                                    </div>
+                                    </Card>
                                 </Collapsible>
                             );
                         })}

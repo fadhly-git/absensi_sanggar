@@ -2,27 +2,9 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
-
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        url: '/settings/profile',
-        icon: null,
-    },
-    {
-        title: 'Password',
-        url: '/settings/password',
-        icon: null,
-    },
-    {
-        title: 'Appearance',
-        url: '/settings/appearance',
-        icon: null,
-    },
-];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     // When server-side rendering, we only render the layout on the client...
@@ -31,6 +13,31 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     }
 
     const currentPath = window.location.pathname;
+    const { auth } = usePage<SharedData>().props;
+    const isSiswa = auth.user?.role === 'siswa';
+
+    const sidebarNavItems: NavItem[] = [
+        {
+            title: 'Profile',
+            url: '/settings/profile',
+            icon: null,
+        },
+        {
+            title: 'Password',
+            url: '/settings/password',
+            icon: null,
+        },
+        ...(isSiswa ? [{
+            title: 'PIN Login',
+            url: '/settings/change-pin',
+            icon: null,
+        }] : []),
+        {
+            title: 'Appearance',
+            url: '/settings/appearance',
+            icon: null,
+        },
+    ];
 
     return (
         <div className="px-4 py-6">

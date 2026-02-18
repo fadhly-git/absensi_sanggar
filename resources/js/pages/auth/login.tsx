@@ -122,8 +122,8 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </div>
 
                     {/* Session duration info */}
-                    <div className="rounded-md bg-blue-50 p-3">
-                        <div className="text-xs text-blue-700 space-y-1">
+                    <div className="rounded-md bg-card-foreground p-3">
+                        <div className="text-xs text-card space-y-1">
                             <div className="flex items-center justify-between">
                                 <span>🔒 Regular login:</span>
                                 <span className="font-medium">2 hours</span>

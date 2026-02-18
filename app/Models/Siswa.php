@@ -103,4 +103,9 @@ class Siswa extends Model
             ->whereYear('tanggal', now()->year)
             ->count();
     }
+
+    public function orders()
+    {
+        return $this->hasMany(Orders::class, );
+    }
 }

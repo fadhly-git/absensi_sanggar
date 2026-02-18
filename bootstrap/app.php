@@ -14,10 +14,22 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__ . '/../routes/api.php',
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
+        then: function () {
+            // Load Public API WITHOUT middleware (no auth, no CSRF, no session)
+            Route::prefix('api')
+                ->group(base_path('routes/publicApi.php'));
+        }
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+
+        $middleware->api(append: [
+            \Illuminate\Session\Middleware\StartSession::class,
+        ]);
 
         $middleware->web(append: [
             HandleAppearance::class,

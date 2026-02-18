@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Settings\PasswordController;
+use App\Http\Controllers\Settings\PinController;
 use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,14 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::get('settings/change-pin', function () {
+        if (Auth::user()->role === 'siswa') {
+            return Inertia::render('student/settings/change-pin');
+        }
+        return back();
+    })->name('settings.pin.edit');
+    Route::put('settings/change-pin', [PinController::class, 'update'])->name('settings.pin.update');
 
     Route::get('settings/appearance', function () {
         if (Auth::user()->role === 'siswa') {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\QrAuthController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,13 @@ Route::middleware(['guest', 'check.token'])->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    // QR Code Authentication Routes
+    Route::group(['prefix' => 'auth', 'as' => 'auth.'], function () {
+        Route::get('qr', [QrAuthController::class, 'showPinForm'])->name('qr');
+        Route::post('qr/verify-pin', [QrAuthController::class, 'verifyPin'])->name('qr.verify-pin');
+        Route::post('qr/setup-pin', [QrAuthController::class, 'setupPin'])->name('qr.setup-pin');
+    });
 });
 
 Route::middleware(['auth', 'web', 'check.token'])->group(function () {

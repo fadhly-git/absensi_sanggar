@@ -9,11 +9,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use Illuminate\Support\Facades\Storage;
 
 class SiswaService
 {
+    protected $qrCodeService;
+
+    public function __construct(QrCodeService $qrCodeService)
+    {
+        $this->qrCodeService = $qrCodeService;
+    }
     /**
      * Get paginated siswa with filters
      */
@@ -65,8 +69,10 @@ class SiswaService
     public function store(array $validated)
     {
         return DB::transaction(function () use ($validated) {
-            $tanggal_terdaftar = Carbon::now()->toDateString();
-            $tahun_masuk = Carbon::now()->year;
+            $now = Carbon::now();
+            $tanggal_terdaftar = $now->toDateString();
+            $tahun_masuk = $now->year;
+
             $count = Siswa::withTrashed()->whereYear('tanggal_terdaftar', $tahun_masuk)->count();
             $inisial = strtolower(env('INITIAL_CODE', 'stnlb'));
             $nis = $tahun_masuk . $inisial . sprintf('%04d', $count + 1);
@@ -87,21 +93,10 @@ class SiswaService
                 'user_id' => $user->id,
             ]);
 
-            $qrData = [
-                'id' => $siswa->id,
-                'nama' => $siswa->nama,
-                'tanggal_terdaftar' => $siswa->tanggal_terdaftar,
-            ];
-            $fileName = "qr_siswa/siswa_{$siswa->id}_{$siswa->nama}.png";
-            Storage::disk('public')->put($fileName, QrCode::format('png')
-                ->size(300)
-                ->generate(json_encode($qrData)));
+            // Generate QR code menggunakan service
+            $this->qrCodeService->generateQrCode($siswa);
 
-            // Update the siswa record with the QR code path
-            $siswa->qrcode_path = $fileName;
-            $siswa->save();
-
-            return $siswa;
+            return $siswa->fresh();
         });
     }
 

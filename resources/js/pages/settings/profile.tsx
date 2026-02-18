@@ -75,8 +75,9 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
                                 required
-                                autoComplete="username"
+                                autoComplete="email"
                                 placeholder="Email address"
+                                disabled={auth.user?.role === 'siswa'}
                             />
 
                             <InputError className="mt-2" message={errors.email} />

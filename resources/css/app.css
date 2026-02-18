@@ -79,90 +79,155 @@
 }
 
 :root {
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    /* Warna Chart - Palet Hangat dengan Aksen Emas */
+    --chart-1: 45 93% 58%;   /* Amber/Gold - dari logo */
+    --chart-2: 35 88% 52%;   /* Orange Gold */
+    --chart-3: 25 85% 48%;   /* Burnt Orange */
+    --chart-4: 15 80% 45%;   /* Terracotta */
+    --chart-5: 42 95% 65%;   /* Light Gold */
+
+    /* Background & Foreground - Light Mode */
+    --background: oklch(0.99 0.005 85);           /* Warm white dengan hint gold */
+    --foreground: oklch(0.15 0.02 45);            /* Dark brown kehitaman */
+
+    /* Card */
+    --card: oklch(1 0 0);                         /* Pure white untuk card */
+    --card-foreground: oklch(0.15 0.02 45);
+
+    /* Popover */
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
+    --popover-foreground: oklch(0.15 0.02 45);
+
+    /* Primary - Warna Emas dari Logo */
+    --primary: oklch(0.75 0.15 75);               /* Golden amber - warna utama logo */
+    --primary-foreground: oklch(0.15 0.02 45);    /* Dark text pada emas */
+
+    /* Secondary - Warm Earth Tones */
+    --secondary: oklch(0.95 0.015 75);            /* Light golden beige */
+    --secondary-foreground: oklch(0.30 0.04 45);  /* Medium brown */
+
+    /* Muted - Soft Neutrals */
+    --muted: oklch(0.96 0.01 75);                 /* Very light warm gray */
+    --muted-foreground: oklch(0.52 0.03 45);      /* Medium gray-brown */
+
+    /* Accent - Highlight Gold */
+    --accent: oklch(0.88 0.12 70);                /* Lighter gold untuk accent */
+    --accent-foreground: oklch(0.20 0.03 45);     /* Dark brown */
+
+    /* Destructive - Warm Red */
+    --destructive: oklch(0.58 0.22 25);
+    --destructive-foreground: oklch(0.99 0.005 85);
+
+    /* Borders & Inputs */
+    --border: oklch(0.90 0.015 75);               /* Light golden border */
+    --input: oklch(0.90 0.015 75);
+    --ring: oklch(0.75 0.15 75);                  /* Golden ring - sama dengan primary */
+
+    /* Chart Colors - Warm Palette */
+    --chart-1: oklch(0.75 0.15 75);   /* Primary Gold */
+    --chart-2: oklch(0.70 0.18 55);   /* Orange Gold */
+    --chart-3: oklch(0.65 0.16 35);   /* Burnt Orange */
+    --chart-4: oklch(0.82 0.12 85);   /* Light Amber */
+    --chart-5: oklch(0.60 0.14 25);   /* Terracotta */
+
+    /* Radius */
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
-    --zebra: #f9f9f9;
-    --red: oklch(0.577 0.245 27.325);
-    --green: oklch(0.577 0.245 27.325);
+
+    /* Sidebar - Golden Theme */
+    --sidebar: oklch(0.98 0.008 75);              /* Very light golden */
+    --sidebar-foreground: oklch(0.20 0.03 45);
+    --sidebar-primary: oklch(0.75 0.15 75);       /* Golden */
+    --sidebar-primary-foreground: oklch(0.15 0.02 45);
+    --sidebar-accent: oklch(0.93 0.02 75);        /* Light golden accent */
+    --sidebar-accent-foreground: oklch(0.25 0.04 45);
+    --sidebar-border: oklch(0.88 0.02 75);
+    --sidebar-ring: oklch(0.75 0.15 75);
+
+    /* Custom Variables */
+    --zebra: #fefbf5;                             /* Warm white untuk zebra striping */
+    --red: oklch(0.58 0.22 25);
+    --green: oklch(0.60 0.20 145);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --zebra: #333333;
-    --table-red: oklch(0.577 0.245 27.325);
-    --table-green: oklch(0.577 0.245 136.025);
+    /* Background & Foreground - Dark Mode */
+    --background: oklch(0.15 0.02 45);            /* Dark brown-black */
+    --foreground: oklch(0.97 0.01 75);            /* Warm white */
+
+    /* Card */
+    --card: oklch(0.20 0.025 45);                 /* Slightly lighter than background */
+    --card-foreground: oklch(0.97 0.01 75);
+
+    /* Popover */
+    --popover: oklch(0.18 0.02 45);
+    --popover-foreground: oklch(0.97 0.01 75);
+
+    /* Primary - Warna Emas Lebih Cerah untuk Dark Mode */
+    --primary: oklch(0.80 0.16 75);               /* Brighter gold di dark mode */
+    --primary-foreground: oklch(0.15 0.02 45);    /* Dark text */
+
+    /* Secondary */
+    --secondary: oklch(0.28 0.035 45);            /* Dark warm brown */
+    --secondary-foreground: oklch(0.97 0.01 75);
+
+    /* Muted */
+    --muted: oklch(0.30 0.03 45);                 /* Medium dark brown */
+    --muted-foreground: oklch(0.68 0.025 65);     /* Light gray-gold */
+
+    /* Accent */
+    --accent: oklch(0.35 0.045 55);               /* Darker golden accent */
+    --accent-foreground: oklch(0.97 0.01 75);
+
+    /* Destructive */
+    --destructive: oklch(0.50 0.20 25);
+    --destructive-foreground: oklch(0.95 0.01 75);
+
+    /* Borders & Inputs */
+    --border: oklch(0.32 0.04 45);                /* Dark golden border */
+    --input: oklch(0.32 0.04 45);
+    --ring: oklch(0.80 0.16 75);                  /* Bright golden ring */
+
+    /* Chart Colors - Dark Mode Warm Palette */
+    --chart-1: oklch(0.72 0.18 75);   /* Vibrant Gold */
+    --chart-2: oklch(0.68 0.20 55);   /* Orange Gold */
+    --chart-3: oklch(0.75 0.15 85);   /* Light Amber */
+    --chart-4: oklch(0.62 0.16 35);   /* Burnt Orange */
+    --chart-5: oklch(0.58 0.14 25);   /* Terracotta */
+
+    /* Sidebar - Dark Golden Theme */
+    --sidebar: oklch(0.22 0.03 45);               /* Dark brown */
+    --sidebar-foreground: oklch(0.97 0.01 75);
+    --sidebar-primary: oklch(0.80 0.16 75);       /* Bright gold */
+    --sidebar-primary-foreground: oklch(0.15 0.02 45);
+    --sidebar-accent: oklch(0.30 0.04 50);        /* Medium golden accent */
+    --sidebar-accent-foreground: oklch(0.97 0.01 75);
+    --sidebar-border: oklch(0.32 0.04 45);
+    --sidebar-ring: oklch(0.80 0.16 75);
+
+    /* Chart HSL - untuk compatibility */
+    --chart-1: 45 85% 60%;
+    --chart-2: 35 80% 55%;
+    --chart-3: 42 90% 68%;
+    --chart-4: 25 75% 50%;
+    --chart-5: 15 70% 48%;
+
+    /* Custom Variables */
+    --zebra: #2a2418;                             /* Dark warm brown untuk zebra */
+    --table-red: oklch(0.55 0.20 25);
+    --table-green: oklch(0.60 0.18 145);
+}
+
+/* Custom styling untuk Sonner jika ingin override total */
+[data-sonner-toast].my-success-toast {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary) / 0.2);
+}
+
+[data-sonner-toast].my-error-toast {
+  background-color: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  border-color: hsl(var(--destructive) / 0.2);
 }
 
 @layer base {
@@ -181,4 +246,46 @@ body {
     font-optical-sizing: auto;
     font-weight: 500;
     font-style: normal;
+}
+
+/* Hide scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tambahan styling untuk elemen dengan tema emas */
+.golden-gradient {
+    background: linear-gradient(135deg,
+        oklch(0.85 0.14 80) 0%,
+        oklch(0.75 0.15 70) 50%,
+        oklch(0.70 0.16 60) 100%);
+}
+
+.golden-text {
+    background: linear-gradient(135deg,
+        oklch(0.75 0.15 75) 0%,
+        oklch(0.65 0.18 65) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+@keyframes border-blink {
+  0%, 100% {
+    border-color: hsl(var(--destructive));
+    box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.0);
+  }
+  50% {
+    border-color: hsl(var(--destructive) / 0.4);
+    box-shadow: 0 0 0 2px hsl(var(--destructive) / 0.35);
+  }
+}
+
+.border-blink {
+  animation: border-blink 0.9s ease-in-out infinite;
 }

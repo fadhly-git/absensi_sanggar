@@ -8,6 +8,10 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @method \Illuminate\Database\Eloquent\Relations\MorphMany tokens()
+ * @method \Laravel\Sanctum\NewAccessToken createToken(string $name, array $abilities = ['*'], \DateTimeInterface $expiresAt = null)
+ */
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -23,6 +27,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'nis',
         'email',
         'password',
+        'qr_token',
+        'pin',
+        'pin_attempts',
+        'pin_locked_until',
     ];
 
     /**
@@ -33,6 +41,8 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'qr_token',
+        'pin',
     ];
 
     /**

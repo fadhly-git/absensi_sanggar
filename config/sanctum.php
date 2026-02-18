@@ -15,11 +15,10 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
-        Sanctum::currentApplicationUrlWithPort()
-    ))),
+    // Default to stateless. Override via SANCTUM_STATEFUL_DOMAINS only if you really need
+    // cookie-based auth (SPA with same-domain). This avoids unintended CSRF redirects for
+    // public API calls from the Next.js frontend on localhost:3000.
+    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', '')),
 
     /*
     |--------------------------------------------------------------------------
@@ -44,9 +43,11 @@ return [
     | considered expired. This will override any values set in the token's
     | "expires_at" attribute, but first-party sessions are not affected.
     |
+    | Set to null to use the expires_at attribute on each token.
+    |
     */
 
-    'expiration' => null,
+    'expiration' => null, // null berarti menggunakan expires_at dari token
 
     /*
     |--------------------------------------------------------------------------

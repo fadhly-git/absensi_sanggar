@@ -4,14 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-
-    return Inertia::render('student/landing-page');
-});
-
 
 // Route::get('/absensi', [lp::class,'index'])->name('home');
-Route::get('/absensi', function () {
+Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
@@ -31,6 +26,24 @@ if (app()->environment('local')) {
         ]);
     })->middleware('auth:sanctum');
 }
+
+Route::prefix('atmin')->middleware('auth:sanctum')->group(function () {
+    Route::prefix('event')->group(function () {
+        // api
+            Route::prefix('api/orders')->group(function () {
+                Route::get('/', [App\Http\Controllers\Event\OrderController::class, 'apiIndex']);
+                Route::post('/', [App\Http\Controllers\Event\OrderController::class, 'apiStore']);
+                Route::get('/statistics', [App\Http\Controllers\Event\OrderController::class, 'apiStatistics']);
+                Route::get('/students', [App\Http\Controllers\Event\OrderController::class, 'apiStudents']);
+                Route::get('/products', [App\Http\Controllers\Event\OrderController::class, 'apiProducts']);
+                Route::get('/{order}', [App\Http\Controllers\Event\OrderController::class, 'apiShow']);
+                Route::put('/{order}', [App\Http\Controllers\Event\OrderController::class, 'apiUpdate']);
+                Route::put('/{order}/status', [App\Http\Controllers\Event\OrderController::class, 'apiUpdateStatus']);
+                Route::delete('/{order}', [App\Http\Controllers\Event\OrderController::class, 'apiDestroy']);
+            });
+
+    });
+});
 
 require __DIR__ . '/pengurus.php';
 require __DIR__ . '/siswa.php';

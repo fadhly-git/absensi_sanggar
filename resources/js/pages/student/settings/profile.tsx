@@ -89,9 +89,9 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                             <Input
                                 id="email"
                                 type="email"
-                                className="mt-1 block w-full"
+                                className="mt-1 block w-full cursor-not-allowed"
                                 value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
+                                disabled={auth.user?.role === 'siswa'}
                                 required
                                 autoComplete="username"
                                 placeholder="Alamat email"

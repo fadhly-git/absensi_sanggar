@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/react';
 import { Fragment } from 'react';
 
 export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemType[] }) {
+    // console.log(breadcrumbs);
     return (
         <>
             {breadcrumbs.length > 0 && (

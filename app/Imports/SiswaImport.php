@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Siswa;
+use App\Services\QrCodeService;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -19,6 +20,13 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnErr
     private $successCount = 0;
     private $failedCount = 0;
     private $errors = [];
+    private $qrCodeService;
+    private $createdSiswaIds = [];
+
+    public function __construct()
+    {
+        $this->qrCodeService = app(QrCodeService::class);
+    }
 
     /**
      * @param array $row
@@ -45,6 +53,9 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnErr
                 'alamat' => $alamat,
                 'status' => $status,
             ]);
+
+            // Simpan ID siswa untuk batch QR generation nanti
+            $this->createdSiswaIds[] = $siswa->id;
 
             $this->successCount++;
             return $siswa;
@@ -96,5 +107,23 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnErr
     public function getErrors(): array
     {
         return array_merge($this->errors, $this->failures());
+    }
+
+    public function getCreatedSiswaIds(): array
+    {
+        return $this->createdSiswaIds;
+    }
+
+    /**
+     * Generate QR codes untuk semua siswa yang berhasil diimport
+     */
+    public function generateQrCodes(): void
+    {
+        if (empty($this->createdSiswaIds)) {
+            return;
+        }
+
+        // Generate QR codes secara batch
+        $this->qrCodeService->generateBulkQrCodes($this->createdSiswaIds);
     }
 }
