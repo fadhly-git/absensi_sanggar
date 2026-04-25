@@ -3,8 +3,9 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MapPin, Calendar, Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import { MapPin, Calendar, Edit, Trash2, MoreHorizontal, QrCode } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Siswa } from '@/types/siswa';
 
@@ -27,7 +28,7 @@ export function SiswaCardGrid({ data, isLoading, selectedIds, onSelect, onEdit, 
     }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {data.map((siswa) => (
                 <Card key={siswa.id} className="group relative overflow-hidden border-border bg-card hover:shadow-lg transition-all duration-300">
                     <div className="absolute top-3 left-3 z-10">
@@ -45,17 +46,45 @@ export function SiswaCardGrid({ data, isLoading, selectedIds, onSelect, onEdit, 
                                     {siswa.status ? 'Aktif' : 'Non-Aktif'}
                                 </Badge>
                             </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
+                            <div className="flex items-center gap-1">
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Lihat QR Code">
+                                            <QrCode className="h-4 w-4" />
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-sm flex flex-col items-center">
+                                        <DialogHeader className="w-full">
+                                            <DialogTitle className="text-center">QR Code - {siswa.nama}</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="flex flex-col items-center justify-center p-2 bg-white rounded-lg w-full">
+                                            {siswa.qrcode_path ? (
+                                                <img 
+                                                    src={`/storage/${siswa.qrcode_path}`} 
+                                                    alt={`QR Code ${siswa.nama}`} 
+                                                    className="w-48 h-48 sm:w-64 sm:h-64 object-contain rounded-lg border-2 border-muted" 
+                                                />
+                                            ) : (
+                                                <div className="text-center p-8 text-muted-foreground border-2 border-dashed rounded-lg w-full">
+                                                    <QrCode className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                                                    <p>QR Code belum di-generate</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => onEdit(siswa)}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
                                     <DropdownMenuItem className="text-destructive" onClick={() => onDelete(siswa.id)}><Trash2 className="mr-2 h-4 w-4" /> Hapus</DropdownMenuItem>
                                 </DropdownMenuContent>
-                            </DropdownMenu>
+                                </DropdownMenu>
+                            </div>
                         </div>
 
                         <div className="space-y-2 text-sm text-muted-foreground">

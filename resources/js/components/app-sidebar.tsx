@@ -24,6 +24,7 @@ import {
     ShoppingCart,
     RefreshCw,
     Receipt,
+    Globe,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
@@ -82,14 +83,20 @@ const mainNavItems: NavItem[] = [
             }
         ],
     },
+];
+
+const footerNavItems: NavItem[] = [
+    {
+        title: 'Content Management System',
+        url: route('atmin.cms.dashboard'),
+        icon: Globe,
+    },
     {
         title: 'System Cache Clear',
         url: route('atmin.system.clear-cache'),
         icon: RefreshCw,
     },
 ];
-
-const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
     return (

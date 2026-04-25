@@ -20,7 +20,7 @@ export function SiswaFiltersComponent({
     const hasActiveFilters = filters.search || filters.status !== 'all';
 
     return (
-        <div className="bg-white p-4 rounded-lg border space-y-4 dark:bg-background dark:border-gray-700">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border space-y-3 sm:space-y-4 dark:bg-background dark:border-gray-700">
             <div className="flex items-center justify-between">
                 <h3 className="font-medium flex items-center gap-2">
                     <Filter className="h-4 w-4" />

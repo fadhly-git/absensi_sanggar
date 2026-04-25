@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Siswa;
 use App\Services\QrCodeService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
 
 class GenerateQrSiswa extends Command
 {
@@ -35,14 +36,19 @@ class GenerateQrSiswa extends Command
         $progressBar->start();
 
         foreach ($siswa as $s) {
-            // Skip jika sudah ada QR code dan tidak force
-            if ($s->qrcode_path && !$forceRegenerate) {
+            $fileExists = $s->qrcode_path ? Storage::disk('public')->exists($s->qrcode_path) : false;
+
+            // Skip jika sudah ada QR code di DB, file fisiknya ada, dan tidak force
+            if ($s->qrcode_path && $fileExists && !$forceRegenerate) {
                 $skippedCount++;
                 $progressBar->advance();
                 continue;
             }
 
-            $result = $this->qrCodeService->generateQrCode($s, $forceRegenerate);
+            // Jika qrcode_path ada di DB TAPI file fisiknya hilang, paksa regenerate untuk user ini
+            $isForce = $forceRegenerate || ($s->qrcode_path && !$fileExists);
+
+            $result = $this->qrCodeService->generateQrCode($s, $isForce);
 
             if ($result) {
                 $successCount++;

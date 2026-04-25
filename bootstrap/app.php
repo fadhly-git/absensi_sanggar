@@ -21,6 +21,15 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->redirectUsersTo(function (\Illuminate\Http\Request $request) {
+            $user = $request->user();
+            if ($user && $user->role === 'siswa') {
+                return route('siswa.dashboard');
+            } elseif ($user && in_array($user->role, ['admin', 'pengurus'])) {
+                return route('atmin.dashboard');
+            }
+            return '/';
+        });
         $middleware->statefulApi();
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         $middleware->api(prepend: [

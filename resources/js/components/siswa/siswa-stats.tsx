@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, UserX, TrendingUp } from 'lucide-react';
 import { useSiswaStats } from '@/hooks/useSiswa';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatCard } from '@/components/ui/stat-card';
 
 export function SiswaStats() {
     const { data: stats, isLoading, error } = useSiswaStats();
@@ -66,25 +66,22 @@ export function SiswaStats() {
     ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             {statCards.map((stat) => {
                 const Icon = stat.icon;
                 return (
-                    <Card key={stat.title} className="bg-card border border-border shadow-sm rounded-xl flex flex-col justify-between h-full">
-                        <CardHeader className="flex flex-row items-center gap-3 pb-2">
-                            <div className={`flex items-center justify-center rounded-lg ${stat.iconBg} w-12 h-12`}>
-                                <Icon className={`w-6 h-6 ${stat.iconColor}`} />
-                            </div>
-                            <div className="flex-1">
-                                <CardTitle className="text-base font-semibold text-foreground mb-1">
-                                    {stat.title}
-                                </CardTitle>
-                                <div className="text-3xl font-extrabold text-foreground leading-tight">
-                                    {stat.value}
-                                </div>
-                            </div>
-                        </CardHeader>
-                    </Card>
+                    <StatCard
+                        key={stat.title}
+                        title={stat.title}
+                        value={stat.value}
+                        icon={<Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${stat.iconColor}`} />}
+                        iconPosition="left"
+                        className="bg-card border border-border shadow-sm rounded-xl h-full"
+                        contentClassName="p-3 sm:p-4"
+                        iconWrapperClassName={`flex items-center justify-center rounded-lg ${stat.iconBg} w-9 h-9 sm:w-12 sm:h-12`}
+                        titleClassName="text-xs sm:text-base font-semibold text-foreground mb-0.5 sm:mb-1 leading-tight"
+                        valueClassName="text-xl sm:text-3xl font-extrabold text-foreground leading-tight"
+                    />
                 );
             })}
         </div>

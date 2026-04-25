@@ -19,6 +19,8 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 axios.defaults.withCredentials = true;
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
+
+
 // Add CSRF token to axios defaults
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 if (csrfToken) {
@@ -99,7 +101,7 @@ createInertiaApp({
         root.render(
             <QueryClientProvider client={queryClient}>
                 <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-                    <ErrorBoundary fallback={<div>Something went wrong.</div>}>
+                    <ErrorBoundary>
                         <App {...props} />
                     </ErrorBoundary>
                 </ThemeProvider>
@@ -110,4 +112,9 @@ createInertiaApp({
     progress: {
         color: '#4B5563',
     },
+    defaults: {
+        future: {
+            useDialogForErrorModal: true,
+        }
+    }
 });

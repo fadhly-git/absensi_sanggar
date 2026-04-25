@@ -35,13 +35,13 @@ export default function Dashboard() {
     return (
         <StudentLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <div className="flex flex-1 flex-col px-4">
-                <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 py-6 lg:flex-row lg:py-8">
+            <div className="flex flex-1 flex-col px-3 sm:px-4">
+                <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6 py-4 sm:py-6 lg:flex-row lg:py-8">
                     <div className="w-full lg:w-1/3">
                         <ProfileSidebar data={siswaData} isLoading={siswaLoading} />
                     </div>
 
-                    <div className="flex w-full flex-col gap-6 lg:w-2/3">
+                    <div className="flex w-full flex-col gap-4 sm:gap-6 lg:w-2/3">
                         <DashboardCard>
                             <MainPage userId={auth.user.id} />
                         </DashboardCard>

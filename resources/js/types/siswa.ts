@@ -6,6 +6,8 @@ export interface Siswa {
     id: number;
     nama: string;
     alamat: string;
+    foto?: string;
+    qrcode_path?: string;
     tanggal_terdaftar: string;
     status: boolean;
     status_text: string;

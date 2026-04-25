@@ -25,22 +25,22 @@ export function ProfileSidebar({ data, isLoading, showEditButton = true }: Profi
 
     return (
         <aside className="bg-card mx-auto flex w-full max-w-xl flex-col rounded-xl border shadow-sm lg:mx-0">
-            <div className="flex flex-col items-center p-6">
+            <div className="flex flex-col items-center p-4 sm:p-6">
                 <div className="relative">
-                    <Avatar className="h-32 w-32 ring-4 ring-offset-2 ring-offset-background ring-primary/20">
+                    <Avatar className="h-20 w-20 sm:h-32 sm:w-32 ring-4 ring-offset-2 ring-offset-background ring-primary/20">
                         <AvatarImage src={data?.foto} alt={data?.nama} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-3xl font-bold">
+                        <AvatarFallback className="bg-primary/10 text-primary text-xl sm:text-3xl font-bold">
                             {getInitials(data?.nama ?? '')}
                         </AvatarFallback>
                     </Avatar>
                     <span
-                        className={`absolute bottom-2 right-2 h-5 w-5 rounded-full border-2 border-background ${
+                        className={`absolute bottom-1 right-1 sm:bottom-2 sm:right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full border-2 border-background ${
                             data?.status ? 'bg-green-500' : 'bg-muted'
                         }`}
                     />
                 </div>
 
-                <h2 className="mt-5 text-xl font-bold capitalize">{data?.nama ?? '-'}</h2>
+                <h2 className="mt-3 sm:mt-5 text-lg sm:text-xl font-bold capitalize">{data?.nama ?? '-'}</h2>
 
                 {data?.alamat && (
                     <div className="text-muted-foreground mt-1 flex items-start gap-1.5 text-sm">

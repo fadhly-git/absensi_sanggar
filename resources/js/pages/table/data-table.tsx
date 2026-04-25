@@ -17,8 +17,8 @@ import {
 } from '@tanstack/react-table';
 import { ChevronDown, LoaderCircle } from 'lucide-react';
 import * as React from 'react';
-import styles from './AttendanceTable.module.css';
-import { DataTableColumnHeader } from './DataTableColumnHeader';
+import styles from './attendance-table.module.css';
+import { DataTableColumnHeader } from './data-table-column-header';
 
 export type Siswa = {
     siswa_id: number;
@@ -93,7 +93,7 @@ export function DataTableDH({ datas, loading, error, setSearch }: CellProps) {
         },
     });
 
-    const handleFilterChange = ()=> {
+    const handleFilterChange = () => {
         setSearch(tempText);
     };
 

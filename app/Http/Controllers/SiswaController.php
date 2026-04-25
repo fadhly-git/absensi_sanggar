@@ -26,18 +26,7 @@ class SiswaController extends Controller
         $this->siswaService = $siswaService;
     }
 
-    // Helper untuk error response & logging
-    private function errorResponse($message, $e, $context = [], $status = 500)
-    {
-        Log::error($message, array_merge([
-            'user_id' => auth()->id(),
-            'error' => $e->getMessage()
-        ], $context));
-        return response()->json([
-            'message' => $message,
-            'error' => $e->getMessage()
-        ], $status);
-    }
+
 
     /**
      * Export semua data siswa ke Excel
@@ -54,15 +43,7 @@ class SiswaController extends Controller
                 ['Content-Type' => 'text/csv']
             );
         } catch (\Exception $e) {
-            \Log::error('Error exporting siswa data', [
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                'message' => 'Gagal mengekspor data siswa',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Gagal mengekspor data siswa', $e);
         }
 
     }
@@ -81,10 +62,7 @@ class SiswaController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'File tidak valid',
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->errorResponse('File tidak valid', null, ['errors' => $validator->errors()], 422);
         }
 
         try {
@@ -104,25 +82,16 @@ class SiswaController extends Controller
                 'failed_count' => $import->getFailedCount()
             ]);
 
-            return response()->json([
-                'message' => 'Data berhasil diimpor dan QR code telah dibuat',
+            return $this->successResponse([
                 'success' => $import->getSuccessCount(),
                 'failed' => $import->getFailedCount(),
                 'errors' => $import->getErrors()
-            ]);
+            ], 'Data berhasil diimpor dan QR code telah dibuat');
 
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Error importing siswa data', [
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'message' => 'Gagal mengimpor data siswa',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Gagal mengimpor data siswa', $e);
         }
     }
 
@@ -159,10 +128,7 @@ class SiswaController extends Controller
                 \Maatwebsite\Excel\Excel::CSV
             );
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal mendownload template',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Gagal mendownload template', $e);
         }
     }
 
@@ -173,7 +139,7 @@ class SiswaController extends Controller
     {
         try {
             $results = $this->siswaService->getPaginated($request->all());
-            return response()->json($results);
+            return $this->successResponse($results);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data siswa', $e);
         }
@@ -210,10 +176,7 @@ class SiswaController extends Controller
     {
         try {
             $siswa = $this->siswaService->store($request->validated());
-            return response()->json([
-                'message' => 'Siswa berhasil ditambahkan',
-                'data' => new SiswaResource($siswa)
-            ], 201);
+            return $this->successResponse(new SiswaResource($siswa), 'Siswa berhasil ditambahkan', 201);
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->errorResponse('Gagal menambahkan siswa', $e, ['request_data' => $request->all()]);
@@ -229,10 +192,7 @@ class SiswaController extends Controller
             $siswa = Siswa::findOrFail($id);
             $updated = $this->siswaService->update($siswa, $request->validated());
 
-            return response()->json([
-                'message' => 'Siswa berhasil diperbarui',
-                'data' => new SiswaResource($updated)
-            ]);
+            return $this->successResponse(new SiswaResource($updated), 'Siswa berhasil diperbarui');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -248,7 +208,7 @@ class SiswaController extends Controller
         try {
             $siswa = Siswa::findOrFail($id);
             $this->siswaService->delete($siswa);
-            return response()->json(['message' => 'Siswa berhasil dihapus']);
+            return $this->successResponse(null, 'Siswa berhasil dihapus');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -264,14 +224,11 @@ class SiswaController extends Controller
         try {
             $siswa = Siswa::withTrashed()->findOrFail($id);
             if (!$siswa->trashed()) {
-                return response()->json(['message' => 'Siswa tidak dalam status terhapus'], 400);
+                return $this->errorResponse('Siswa tidak dalam status terhapus', null, [], 400);
             }
             $this->siswaService->restore($siswa);
 
-            return response()->json([
-                'message' => 'Siswa berhasil dipulihkan',
-                'data' => new SiswaResource($siswa->fresh())
-            ]);
+            return $this->successResponse(new SiswaResource($siswa->fresh()), 'Siswa berhasil dipulihkan');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -291,10 +248,7 @@ class SiswaController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Data tidak valid',
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->errorResponse('Data tidak valid', null, ['errors' => $validator->errors()], 422);
         }
         DB::beginTransaction();
         try {
@@ -305,18 +259,12 @@ class SiswaController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'message' => "{$affectedCount} siswa berhasil di {$request->action}",
-                'affected_count' => $affectedCount
-            ]);
+            return $this->successResponse(['affected_count' => $affectedCount], "{$affectedCount} siswa berhasil di {$request->action}");
 
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json([
-                'message' => 'Gagal melakukan operasi bulk',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Gagal melakukan operasi bulk', $e);
         }
     }
 
@@ -328,9 +276,7 @@ class SiswaController extends Controller
         try {
             $count = $this->siswaService->getCount();
 
-            return response()->json([
-                'count' => $count
-            ]);
+            return $this->successResponse(['count' => $count]);
 
         } catch (\Exception $e) {
             // Log::error('Error getting siswa count', [
@@ -338,10 +284,7 @@ class SiswaController extends Controller
             //     'error' => $e->getMessage()
             // ]);
 
-            return response()->json([
-                'message' => 'Gagal mengambil jumlah siswa',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Gagal mengambil jumlah siswa', $e);
         }
     }
 
@@ -353,16 +296,11 @@ class SiswaController extends Controller
         try {
             $count = $this->siswaService->getCountAktif();
 
-            return response()->json([
-                'count' => $count
-            ]);
+            return $this->successResponse(['count' => $count]);
 
         } catch (\Exception $e) {
 
-            return response()->json([
-                'message' => 'Gagal mengambil jumlah siswa aktif',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Gagal mengambil jumlah siswa aktif', $e);
         }
     }
 
@@ -373,14 +311,11 @@ class SiswaController extends Controller
     {
         try {
             $result = $this->siswaService->getTrashed($request->all());
-            return response()->json($result);
+            return $this->successResponse($result);
 
         } catch (\Exception $e) {
 
-            return response()->json([
-                'message' => 'Gagal mengambil data siswa yang dihapus',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Gagal mengambil data siswa yang dihapus', $e);
         }
     }
 
@@ -398,24 +333,17 @@ class SiswaController extends Controller
             $hasAbsensi = $siswa->absensis()->count() > 0;
 
             if ($hasAbsensi) {
-                return response()->json([
-                    'message' => 'Tidak dapat menghapus permanen. Siswa memiliki riwayat absensi.'
-                ], 400);
+                return $this->errorResponse('Tidak dapat menghapus permanen. Siswa memiliki riwayat absensi.', null, [], 400);
             }
 
             $siswa->forceDelete();
 
             DB::commit();
-            return response()->json([
-                'message' => 'Siswa berhasil dihapus permanen'
-            ]);
+            return $this->successResponse(null, 'Siswa berhasil dihapus permanen');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'message' => 'Gagal menghapus permanen siswa',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Gagal menghapus permanen siswa', $e);
         }
     }
 }

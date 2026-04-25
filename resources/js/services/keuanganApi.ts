@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import axios from 'axios';
+import { apiClient as axios } from '@/lib/api/client';
 
 // Base URL konsisten dengan routes Laravel
 const BASE_URL = '/api/admin/keuangan';

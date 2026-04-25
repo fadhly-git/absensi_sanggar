@@ -6,7 +6,7 @@ use App\Http\Controllers\KeuanganController as KC;
 use App\Http\Controllers\Event\ProductController;
 use Inertia\Inertia;
 
-Route::middleware(['auth', 'verified', 'role:pengurus,admin', 'check.token'])->group(function () {
+Route::middleware(['auth', 'role:pengurus,admin', 'verified', 'check.token'])->group(function () {
 
     // API Routes for Event Orders
     Route::prefix('pengurus/event/orders')->group(function () {
@@ -21,6 +21,10 @@ Route::middleware(['auth', 'verified', 'role:pengurus,admin', 'check.token'])->g
     });
 
     Route::group(['prefix' => 'atmin'], function () {
+        Route::get('/', function () {
+            return redirect()->route('atmin.dashboard');
+        });
+
         //export route definition
         Route::get('export-financial', [KC::class, 'exportFinancialReport'])->name('export-keuangan');
         Route::get('export-absen', [AC::class, 'exportExcel'])->name('export-absen');

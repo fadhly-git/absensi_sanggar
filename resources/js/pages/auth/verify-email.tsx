@@ -1,19 +1,24 @@
 // Components
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/auth-layout';
+import { SharedData } from '@/types';
 
 export default function VerifyEmail({ status }: { status?: string }) {
     const { post, processing } = useForm({});
+    const { auth } = usePage<SharedData>().props;
+    const isSiswa = auth.user?.role === 'siswa';
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        post(route('verification.send'));
+        if (!isSiswa) {
+            post(route('verification.send'));
+        }
     };
 
     return (
@@ -26,11 +31,26 @@ export default function VerifyEmail({ status }: { status?: string }) {
                 </div>
             )}
 
-            <form onSubmit={submit} className="space-y-6 text-center">
-                <Button disabled={processing}>
-                    {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    Resend verification email
-                </Button>
+            <form onSubmit={submit} className="flex flex-col items-center space-y-6 text-center">
+                {isSiswa ? (
+                    <div className="flex w-full flex-col gap-3">
+                        <Button
+                            type="button"
+                            onClick={() => (window.location.href = route('siswa.dashboard'))}
+                            className="w-full"
+                        >
+                            Ke Dashboard Siswa
+                        </Button>
+                        <Button disabled variant="outline" type="button" className="w-full">
+                            Hubungi Admin untuk Verifikasi
+                        </Button>
+                    </div>
+                ) : (
+                    <Button disabled={processing} className="w-full">
+                        {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                        Resend verification email
+                    </Button>
+                )}
 
                 <TextLink href={route('logout')} method="post" className="mx-auto block text-sm">
                     Log out

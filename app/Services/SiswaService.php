@@ -86,7 +86,6 @@ class SiswaService
             ]);
 
             $siswa = Siswa::create([
-                'nama' => ucwords(strtolower($validated['nama'])),
                 'alamat' => $validated['alamat'],
                 'status' => $validated['status'],
                 'tanggal_terdaftar' => $tanggal_terdaftar,
@@ -106,7 +105,23 @@ class SiswaService
     public function update(Siswa $siswa, array $validated)
     {
         return DB::transaction(function () use ($siswa, $validated) {
-            $siswa->update($validated);
+            // Update nama di tabel users jika ada
+            if (isset($validated['nama']) && $siswa->user) {
+                $siswa->user->update([
+                    'name' => ucwords(strtolower($validated['nama'])),
+                ]);
+            }
+
+            // Update siswa data (alamat, status)
+            $siswaData = array_filter([
+                'alamat' => $validated['alamat'] ?? null,
+                'status' => $validated['status'] ?? null,
+            ], fn($v) => $v !== null);
+
+            if (!empty($siswaData)) {
+                $siswa->update($siswaData);
+            }
+
             return $siswa->fresh();
         });
     }
@@ -117,6 +132,9 @@ class SiswaService
     public function delete(Siswa $siswa)
     {
         return DB::transaction(function () use ($siswa) {
+            if ($siswa->user) {
+                $siswa->user->delete();
+            }
             $siswa->delete();
             return true;
         });
@@ -142,6 +160,9 @@ class SiswaService
             if ($siswa->absensis()->count() > 0) {
                 throw new \Exception('Tidak dapat menghapus permanen. Siswa memiliki riwayat absensi.');
             }
+            if ($siswa->user) {
+                $siswa->user->delete();
+            }
             $siswa->forceDelete();
             return true;
         });
@@ -162,6 +183,12 @@ class SiswaService
                 ]);
                 return Siswa::whereIn('id', $ids)->update(['status' => false]);
             case 'delete':
+                $siswas = Siswa::whereIn('id', $ids)->get();
+                foreach ($siswas as $siswa) {
+                    if ($siswa->user) {
+                        $siswa->user->delete();
+                    }
+                }
                 return Siswa::whereIn('id', $ids)->delete();
             case 'restore':
                 return Siswa::withTrashed()->whereIn('id', $ids)->restore();

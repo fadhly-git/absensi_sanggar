@@ -41,21 +41,38 @@ class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
-            'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user()?->load('siswas'),
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                    'role' => $request->user()->role,
+                    'nis' => $request->user()->nis,
+                    'siswas' => $request->user()->siswas ? [
+                        'qrcode_path' => $request->user()->siswas->qrcode_path,
+                    ] : null,
+                ] : null,
             ],
-            'ziggy' => fn(): array => [
-                ...(new Ziggy)->toArray(),
-                'location' => $request->url(),
-            ],
-            'sidebarOpen' => !$request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'flash' => [
+                'message' => fn() => $request->session()->get('message'),
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
-                'errors' => fn() => $request->session()->get('errors'),
-                'message' => fn() => $request->session()->get('message'),
+            ],
+            'inspiringQuote' => [
+                'message' => trim($message),
+                'author' => trim($author),
+            ],
+            // Make sure ziggy is properly serialized and doesn't contain Symbols
+            'ziggy' => fn() => [
+                ...(new \Tighten\Ziggy\Ziggy)->toArray(),
+                'location' => $request->url(),
+            ],
+            'seo' => fn() => [
+                'title' => 'Ngesti Laras Budaya',
+                'description' => 'Sanggar tari tradisional Ngesti Laras Budaya di Meteseh, Boja, Kendal. Pelestarian seni tari Jawa, gamelan, dan budaya nusantara.',
+                'image' => url('/img/og-default.jpg'),
+                'url' => $request->url(),
+                'type' => 'website',
             ],
         ];
     }

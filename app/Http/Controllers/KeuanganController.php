@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\KeuanganService;
 use App\Http\Requests\GetTransactionRequest;
 use App\Http\Requests\TransactionRequest;
-use App\Http\Resources\ApiResponse;
+
 use App\Exports\FinancialExport;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -31,15 +31,9 @@ class KeuanganController extends Controller
             // Pastikan data selalu array
             $data = is_array($data) ? $data : [];
 
-            return ApiResponse::success($data);
+            return $this->successResponse($data);
         } catch (\Exception $e) {
-            \Log::error('KeuanganController@getTransactions error:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
-            ]);
-
-            return ApiResponse::error('Gagal mengambil data: ' . $e->getMessage());
+            return $this->errorResponse('Gagal mengambil data: ' . $e->getMessage(), $e);
         }
     }
 
@@ -54,14 +48,9 @@ class KeuanganController extends Controller
                 'saldo_sebelumnya' => (float) ($saldo['saldo_sebelumnya'] ?? 0),
             ];
 
-            return ApiResponse::success($saldo);
+            return $this->successResponse($saldo);
         } catch (\Exception $e) {
-            \Log::error('KeuanganController@getSaldo error:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return ApiResponse::error('Gagal mengambil data saldo: ' . $e->getMessage());
+            return $this->errorResponse('Gagal mengambil data saldo: ' . $e->getMessage(), $e);
         }
     }
 
@@ -79,10 +68,10 @@ class KeuanganController extends Controller
             }
 
             DB::commit();
-            return ApiResponse::success(null, 'Data berhasil disimpan');
+            return $this->successResponse(null, 'Data berhasil disimpan');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponse::error('Gagal menyimpan data: ' . $e->getMessage());
+            return $this->errorResponse('Gagal menyimpan data: ' . $e->getMessage(), $e);
         }
     }
 
@@ -101,10 +90,10 @@ class KeuanganController extends Controller
             );
 
             DB::commit();
-            return ApiResponse::success(null, 'Data berhasil diperbarui');
+            return $this->successResponse(null, 'Data berhasil diperbarui');
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponse::error('Gagal memperbarui data: ' . $e->getMessage());
+            return $this->errorResponse('Gagal memperbarui data: ' . $e->getMessage(), $e);
         }
     }
 
@@ -114,12 +103,12 @@ class KeuanganController extends Controller
             $deleted = $this->keuanganService->deleteTransaction($id);
 
             if (!$deleted) {
-                return ApiResponse::error('Data tidak ditemukan', 404);
+                return $this->errorResponse('Data tidak ditemukan', null, [], 404);
             }
 
-            return ApiResponse::success(null, 'Data berhasil dihapus');
+            return $this->successResponse(null, 'Data berhasil dihapus');
         } catch (\Exception $e) {
-            return ApiResponse::error('Gagal menghapus data: ' . $e->getMessage());
+            return $this->errorResponse('Gagal menghapus data: ' . $e->getMessage(), $e);
         }
     }
 

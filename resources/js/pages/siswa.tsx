@@ -27,9 +27,9 @@ export default function SiswaPage() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Manajemen Siswa" />
 
-            <div className="p-6 space-y-8 bg-background min-h-screen">
+            <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 bg-background min-h-screen">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <SiswaHeader
                         title="Database Siswa"
                         subtitle="Kelola dan monitoring aktivitas siswa sanggar Anda"
@@ -52,7 +52,7 @@ export default function SiswaPage() {
 
                 <div className="space-y-4">
                     {/* Page controls: select all on page + per-page */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <Checkbox
                                 checked={Boolean(state.siswaData?.data && state.siswaData.data.length > 0 && state.siswaData.data.every((s: any) => state.selectedIds.includes(s.id)))}

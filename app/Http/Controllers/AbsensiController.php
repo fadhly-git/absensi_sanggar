@@ -39,13 +39,9 @@ class AbsensiController extends Controller
                 $tahun
             );
 
-            return response()->json($result);
+            return $this->successResponse($result);
         } catch (\Exception $e) {
-            \Log::error('Error in riwayatSiswa: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Terjadi kesalahan saat mengambil data riwayat',
-                'message' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data riwayat', $e);
         }
     }
 
@@ -56,13 +52,9 @@ class AbsensiController extends Controller
     {
         try {
             $years = $this->reportService->getAvailableYears($user_id);
-            return response()->json(['years' => $years]);
+            return $this->successResponse(['years' => $years]);
         } catch (\Exception $e) {
-            \Log::error('Error in getAvailableYears: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Terjadi kesalahan',
-                'years' => []
-            ], 500);
+            return $this->errorResponse('Terjadi kesalahan', $e, ['years' => []]);
         }
     }
 
@@ -81,8 +73,7 @@ class AbsensiController extends Controller
                 $validated['search'] ?? null
             );
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'data' => AbsensiReportResource::collection($paginator->items()),
                 'pagination' => [
                     'currentPage' => $paginator->currentPage(),
@@ -93,12 +84,7 @@ class AbsensiController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat memuat data',
-                'error' => app()->environment('local') ? $e->getMessage() : null
-            ], 500);
+            return $this->errorResponse('Terjadi kesalahan saat memuat data', $e);
         }
     }
 
@@ -112,7 +98,7 @@ class AbsensiController extends Controller
 
         if (!$scanResult || !isset($scanResult['rawValue'])) {
             \Log::warning('Absensi QR: Data tidak valid', ['payload' => $request->all()]);
-            return response()->json(['success' => false, 'message' => 'Data QR tidak valid'], 400);
+            return $this->errorResponse('Data QR tidak valid', null, [], 400);
         }
 
         $rawValue = $scanResult['rawValue'];
@@ -143,14 +129,14 @@ class AbsensiController extends Controller
 
             if (!isset($parsedUrl['query'])) {
                 \Log::warning('QR URL tidak memiliki query parameter', ['url' => $normalizedValue]);
-                return response()->json(['success' => false, 'message' => 'QR URL tidak valid (tidak ada query parameter)'], 400);
+                return $this->errorResponse('QR URL tidak valid (tidak ada query parameter)', null, [], 400);
             }
 
             parse_str($parsedUrl['query'], $queryParams);
 
             if (!isset($queryParams['token'])) {
                 \Log::warning('QR URL tidak memiliki token parameter', ['query_params' => $queryParams]);
-                return response()->json(['success' => false, 'message' => 'QR URL tidak valid (tidak ada token)'], 400);
+                return $this->errorResponse('QR URL tidak valid (tidak ada token)', null, [], 400);
             }
 
             // Decode token untuk dapatkan user_id
@@ -159,14 +145,14 @@ class AbsensiController extends Controller
 
             if (!$user) {
                 \Log::warning('Token tidak valid atau user tidak ditemukan', ['token' => substr($queryParams['token'], 0, 20) . '...']);
-                return response()->json(['success' => false, 'message' => 'Token tidak valid atau user tidak ditemukan'], 404);
+                return $this->errorResponse('Token tidak valid atau user tidak ditemukan', null, [], 404);
             }
 
             // Get siswa from user
             $siswa = $user->siswas;
             if (!$siswa) {
                 \Log::warning('User tidak memiliki relasi siswa', ['user_id' => $user->id, 'user_name' => $user->name]);
-                return response()->json(['success' => false, 'message' => 'User tidak terdaftar sebagai siswa'], 404);
+                return $this->errorResponse('User tidak terdaftar sebagai siswa', null, [], 404);
             }
 
             \Log::info('URL-based QR berhasil diparse', [
@@ -187,10 +173,7 @@ class AbsensiController extends Controller
                     'raw_value' => $rawValue,
                     'json_error' => json_last_error_msg()
                 ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Format QR tidak valid. Silakan regenerate QR code dengan command: php artisan generate:qr-siswa --force'
-                ], 400);
+                return $this->errorResponse('Format QR tidak valid. Silakan regenerate QR code dengan command: php artisan generate:qr-siswa --force', null, [], 400);
             }
 
             \Log::info('JSON-based QR detected', ['qr_data' => $qrData]);
@@ -198,13 +181,13 @@ class AbsensiController extends Controller
             // Validate old attendance format
             if (!isset($qrData['id'])) {
                 \Log::warning('JSON QR tidak memiliki ID siswa', ['qr_data' => $qrData]);
-                return response()->json(['success' => false, 'message' => 'QR tidak memiliki ID siswa yang valid'], 400);
+                return $this->errorResponse('QR tidak memiliki ID siswa yang valid', null, [], 400);
             }
 
             $siswa = \App\Models\Siswa::find($qrData['id']);
             if (!$siswa) {
                 \Log::warning('Siswa tidak ditemukan dari JSON QR', ['siswa_id' => $qrData['id']]);
-                return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan'], 404);
+                return $this->errorResponse('Siswa tidak ditemukan', null, [], 404);
             }
 
             \Log::info('JSON QR berhasil diparse', [
@@ -216,7 +199,7 @@ class AbsensiController extends Controller
         // Safety check
         if (!$siswa) {
             \Log::error('Siswa object is null after parsing');
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat memproses QR'], 500);
+            return $this->errorResponse('Terjadi kesalahan saat memproses QR', null, [], 500);
         }
 
         // Continue with attendance logic (same for both old and new format)
@@ -225,10 +208,7 @@ class AbsensiController extends Controller
         // Validasi: hanya izinkan absensi pada hari Minggu
         $tanggalCarbon = \Carbon\Carbon::parse($tanggal);
         if ($tanggalCarbon->dayOfWeek !== \Carbon\Carbon::SUNDAY) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Absensi hanya dapat dilakukan pada hari Minggu'
-            ], 400);
+            return $this->errorResponse('Absensi hanya dapat dilakukan pada hari Minggu', null, [], 400);
         }
 
         // Cek apakah sudah absen pada tanggal ini
@@ -237,10 +217,7 @@ class AbsensiController extends Controller
             ->first();
 
         if ($absenHariIni) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Siswa sudah melakukan absensi pada tanggal ini'
-            ], 409);
+            return $this->errorResponse('Siswa sudah melakukan absensi pada tanggal ini', null, [], 409);
         }
 
         $dataToInsert = [
@@ -269,19 +246,12 @@ class AbsensiController extends Controller
                 'tanggal' => $tanggal,
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan absensi: ' . $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Gagal menyimpan absensi', $e);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => $isBonus
-                ? 'Absensi berhasil dicatat. Selamat, Anda mendapatkan BONUS!'
-                : 'Absensi berhasil dicatat',
+        return $this->successResponse([
             'bonus' => $isBonus,
-        ], 201);
+        ], $isBonus ? 'Absensi berhasil dicatat. Selamat, Anda mendapatkan BONUS!' : 'Absensi berhasil dicatat', 201);
     }
 
     /**
@@ -293,22 +263,11 @@ class AbsensiController extends Controller
         try {
             $result = $this->absensiService->saveFromRequest($request);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data absensi berhasil disimpan.',
-                'data' => $result
-            ], 201);
+            return $this->successResponse($result, 'Data absensi berhasil disimpan.', 201);
         } catch (\InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            return $this->errorResponse($e->getMessage(), null, [], 400);
         } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan pada server.'
-            ], 500);
+            return $this->errorResponse('Terjadi kesalahan pada server.', $e);
         }
     }
 
@@ -328,16 +287,9 @@ class AbsensiController extends Controller
                 $validated['mode']
             );
 
-            return response()->json([
-                'success' => true,
-                'data' => $count
-            ]);
+            return $this->successResponse($count);
         } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memuat statistik'
-            ], 500);
+            return $this->errorResponse('Gagal memuat statistik', $e);
         }
     }
 
@@ -354,16 +306,9 @@ class AbsensiController extends Controller
         try {
             $siswa = $this->absensiService->getActiveSiswaForAbsensi($validatedDate->validated()['tanggal']);
 
-            return response()->json([
-                'success' => true,
-                'data' => $siswa
-            ]);
+            return $this->successResponse($siswa);
         } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memuat data siswa'
-            ], 500);
+            return $this->errorResponse('Gagal memuat data siswa', $e);
         }
     }
 
@@ -395,11 +340,7 @@ class AbsensiController extends Controller
                 $filename
             );
         } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengekspor data'
-            ], 500);
+            return $this->errorResponse('Gagal mengekspor data', $e);
         }
     }
 
@@ -423,10 +364,7 @@ class AbsensiController extends Controller
             })
             ->values();
 
-        return response()->json([
-            'success' => true,
-            'data' => $data
-        ]);
+        return $this->successResponse($data);
     }
 
     /**
@@ -476,9 +414,6 @@ class AbsensiController extends Controller
 
         \Cache::tags(['absensi', 'report', 'stats'])->flush();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Absensi berhasil dihapus'
-        ]);
+        return $this->successResponse(null, 'Absensi berhasil dihapus');
     }
 }

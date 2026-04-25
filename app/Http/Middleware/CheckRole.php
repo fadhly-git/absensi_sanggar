@@ -35,6 +35,16 @@ class CheckRole
             //     'required_roles' => $roles,
             //     'url' => $request->fullUrl(),
             // ]);
+            if ($request->expectsJson() || $request->is('api/*') || $request->is('*/api/*')) {
+                return response()->json(['message' => 'Akses tidak diizinkan.'], 403);
+            }
+
+            if ($user && $user->role === 'siswa') {
+                return redirect()->route('siswa.dashboard')->with('error', 'Akses tidak diizinkan.');
+            } elseif ($user && in_array($user->role, ['admin', 'pengurus'])) {
+                return redirect()->route('atmin.dashboard')->with('error', 'Akses tidak diizinkan.');
+            }
+
             abort(403, 'Akses tidak diizinkan.');
         }
 

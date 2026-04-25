@@ -85,7 +85,7 @@ export function AbsensiGrid({
         <div className="flex flex-col gap-8">
             {bulanRows.map((bulanGroup, idx) => (
                 <div key={idx} className="w-full">
-                    <div className="mb-4 flex gap-8">
+                    <div className="mb-3 sm:mb-4 flex gap-4 sm:gap-8">
                         {bulanGroup.map((bulanKey) => {
                             const tanggalList = Object.entries(absensi[bulanKey] ?? {}).sort(
                                 ([a], [b]) => (a < b ? -1 : 1)
@@ -104,7 +104,7 @@ export function AbsensiGrid({
 
                     <div
                         className={cn(
-                            'flex gap-8',
+                            'flex gap-4 sm:gap-8',
                             bulanGroup.length === 1 && 'justify-center'
                         )}
                     >
@@ -135,7 +135,7 @@ export function AbsensiGrid({
                                         </div>
                                     ) : (
                                         rows.map((row, rIdx) => (
-                                            <div className="flex gap-3" key={rIdx}>
+                                            <div className="flex gap-2 sm:gap-3" key={rIdx}>
                                                 {row.map(([tanggal, status]) => (
                                                     <div
                                                         key={tanggal}

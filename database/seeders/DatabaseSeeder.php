@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             SiswaSeeder::class,
             UsersImportSeeder::class,
             SiswaToUserIdSeeder::class,
+            CmsSeeder::class,
             // Tambahkan seeder lain jika diperlukan
         ]);
     }

@@ -107,9 +107,9 @@ export default function DaftarHadirSiswa() {
                 subtitle={`Selamat datang, ${auth.user.name}. Berikut adalah daftar kehadiran Anda.`}
             />
 
-            <div className="flex flex-1 flex-col px-4">
-                <div className="mx-auto w-full max-w-7xl py-6 lg:py-8">
-                    <AbsensiLegend className="mb-6" />
+            <div className="flex flex-1 flex-col px-3 sm:px-4">
+                <div className="mx-auto w-full max-w-7xl py-4 sm:py-6 lg:py-8">
+                    <AbsensiLegend className="mb-4 sm:mb-6" />
                     <AbsensiGrid
                         absensi={data?.absensi ?? data ?? {}}
                         isLoading={isLoading}

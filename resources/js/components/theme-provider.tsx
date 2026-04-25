@@ -26,9 +26,19 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+ const [theme, setTheme] = useState<Theme>(() => {
+    // Check if we should force dark theme based on path
+    const path = window.location.pathname;
+    const isSiswaOrAdmin = path.startsWith('/siswa') || path.startsWith('/admin');
+
+    // Force dark theme for non-siswa/admin routes
+    if (!isSiswaOrAdmin) {
+      return "dark";
+    }
+
+    // For siswa/admin routes, use saved preference or default
+    return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+  })
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -36,7 +46,7 @@ export function ThemeProvider({
     root.classList.remove("light", "dark")
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: light)")
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
         .matches
         ? "dark"
         : "light"
@@ -48,11 +58,38 @@ export function ThemeProvider({
     root.classList.add(theme)
   }, [theme])
 
+  // Force dark theme on non-siswa/admin routes even if theme changes
+  useEffect(() => {
+    const checkAndForceTheme = () => {
+      const path = window.location.pathname;
+      const isSiswaOrAdmin = path.startsWith('/siswa') || path.startsWith('/admin');
+
+      if (!isSiswaOrAdmin && theme !== 'dark') {
+        setTheme('dark');
+      }
+    };
+
+    checkAndForceTheme();
+
+    // Listen for Inertia navigation
+    document.addEventListener('inertia:navigate', checkAndForceTheme);
+    return () => document.removeEventListener('inertia:navigate', checkAndForceTheme);
+  }, [theme])
+
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+    setTheme: (newTheme: Theme) => {
+      // Prevent theme changes on non-siswa/admin routes
+      const path = window.location.pathname;
+      const isSiswaOrAdmin = path.startsWith('/siswa') || path.startsWith('/admin');
+
+      if (!isSiswaOrAdmin) {
+        // Force dark theme, don't allow changes
+        return;
+      }
+
+      localStorage.setItem(storageKey, newTheme)
+      setTheme(newTheme)
     },
   }
 

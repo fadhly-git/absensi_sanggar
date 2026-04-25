@@ -22,6 +22,7 @@ class SiswaResource extends JsonResource
             'status' => $this->status,
             'tanggal_terdaftar' => $this->tanggal_terdaftar,
             'status_text' => $this->status_text,
+            'qrcode_path' => $this->qrcode_path,
             'total_absensi' => $absensisLoaded ? $this->absensis->count() : 0,
             'absensi_bulan_ini' => $absensisLoaded ? $this->absensis->where('tanggal', '>=', now()->startOfMonth())->count() : 0,
             'created_at' => $this->created_at,

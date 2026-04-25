@@ -2,13 +2,13 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { AbsensiHadirMingguIni } from "@/components/absensi/AbsensiHadirMingguIni";
-import { AbsensiFilterBar } from '@/components/absensi/AbsensiFilterBar';
-import { AbsensiStatsCard } from '@/components/absensi/AbsensiStatsCard';
-import { AbsensiCardGrid } from '@/components/absensi/AbsensiCardGrid';
-import { AbsensiPagination } from '@/components/absensi/AbsensiPagination';
-import { LoadingSpinner, ErrorMessage } from '@/components/absensi/AbsensiHelpers';
-import { AbsensiInputDialog } from '@/components/absensi/AbsensiInputDialog';
+import { AbsensiHadirMingguIni } from "@/components/absensi/absensi-hadir-minggu-ini";
+import { AbsensiFilterBar } from '@/components/absensi/absensi-filter-bar';
+import { AbsensiStatsCard } from '@/components/absensi/absensi-stats-card';
+import { AbsensiCardGrid } from '@/components/absensi/absensi-card-grid';
+import { AbsensiPagination } from '@/components/absensi/absensi-pagination';
+import { LoadingSpinner, ErrorMessage } from '@/components/absensi/absensi-helpers';
+import { AbsensiInputDialog } from '@/components/absensi/absensi-input-dialog';
 
 import {
     useWeeklyAbsensi,

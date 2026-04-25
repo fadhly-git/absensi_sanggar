@@ -44,7 +44,7 @@ import {
     AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { LoadingSpinner, ErrorMessage } from '@/components/absensi/AbsensiHelpers';
+import { LoadingSpinner, ErrorMessage } from '@/components/absensi/absensi-helpers';
 
 // For collapsible
 import {

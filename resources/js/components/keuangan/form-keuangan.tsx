@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { LoaderCircle, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { DatePicker } from '@/components/costum-date-picker';
+import { DatePicker } from '@/components/molecules/date-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import {
@@ -310,8 +310,8 @@ export function KeuanganTabs() {
                                 <CardHeader>
                                     <Label htmlFor="transaction-date">Tanggal Transaksi</Label>
                                     <DatePicker
-                                        date={date}
-                                        setDate={setDate}
+                                        value={date}
+                                        onChange={setDate}
                                     />
                                 </CardHeader>
 

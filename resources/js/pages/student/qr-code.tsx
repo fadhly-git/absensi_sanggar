@@ -20,6 +20,7 @@ export default function QrCodePage() {
     const { auth } = page.props;
 
     const handleDownload = () => {
+        if (!auth.user?.siswas?.qrcode_path) return;
         const link = document.createElement('a');
         link.href = `/storage/${auth.user.siswas.qrcode_path}`;
         link.download = `QR-Code-${auth.user.name.replace(/\s+/g, '-')}.png`;
@@ -71,19 +72,51 @@ export default function QrCodePage() {
         );
     }
 
+    if (!auth.user?.siswas?.qrcode_path) {
+        return (
+            <StudentLayout breadcrumbs={breadcrumbs}>
+                <Head title="QR Code Siswa" />
+                <div className="flex min-h-[calc(100vh-200px)] items-center justify-center bg-gradient-to-br from-background via-muted/30 to-muted/50 px-4 py-12">
+                    <Card className="w-full max-w-md shadow-lg">
+                        <CardContent className="pt-6">
+                            <div className="mb-6 flex justify-center">
+                                <div className="rounded-full bg-destructive/10 p-4">
+                                    <QrCode className="h-12 w-12 text-destructive" />
+                                </div>
+                            </div>
+                            <CardTitle className="mb-3 text-center">QR Code Tidak Tersedia</CardTitle>
+                            <CardDescription className="mb-6 text-center">
+                                Data QR code Anda tidak ditemukan. Anda mungkin belum terdaftar sebagai siswa.
+                            </CardDescription>
+                            <div className="mt-6 flex justify-center">
+                                <Button
+                                    onClick={() => (window.history.back())}
+                                    variant="outline"
+                                    className="w-full"
+                                >
+                                    Kembali
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </StudentLayout>
+        );
+    }
+
     return (
         <StudentLayout breadcrumbs={breadcrumbs}>
             <Head title="QR Code Siswa" />
-            <div className="min-h-[calc(100vh-200px)] bg-gradient-to-br from-background via-muted/30 to-muted/50 px-4 py-12">
+            <div className="min-h-[calc(100vh-200px)] bg-gradient-to-br from-background via-muted/30 to-muted/50 px-3 sm:px-4 py-6 sm:py-12">
                 <div className="mx-auto max-w-4xl">
                     {/* Header Section */}
-                    <div className="mb-8 text-center">
-                        <Badge variant="secondary" className="mb-4 gap-2">
+                    <div className="mb-6 sm:mb-8 text-center">
+                        <Badge variant="secondary" className="mb-3 sm:mb-4 gap-2">
                             <Sparkles className="h-4 w-4" />
                             <span>QR Code Pribadi</span>
                         </Badge>
-                        <h1 className="mb-3 text-4xl font-bold">QR Code Absensi</h1>
-                        <p className="text-lg text-muted-foreground">Gunakan QR code ini untuk mencatat kehadiran Anda</p>
+                        <h1 className="mb-2 sm:mb-3 text-2xl sm:text-4xl font-bold">QR Code Absensi</h1>
+                        <p className="text-sm sm:text-lg text-muted-foreground">Gunakan QR code ini untuk mencatat kehadiran Anda</p>
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-3">
@@ -114,11 +147,11 @@ export default function QrCodePage() {
                                             <div className="absolute -bottom-2 -right-2 h-12 w-12 rounded-br-lg border-b-4 border-r-4 border-primary"></div>
 
                                             {/* QR Code */}
-                                            <div className="rounded-xl border-4 border-muted bg-card p-4 shadow-md">
+                                            <div className="rounded-xl border-4 border-muted bg-card p-3 sm:p-4 shadow-md">
                                                 <img
-                                                    src={`/storage/${auth.user.siswas.qrcode_path}`}
+                                                    src={`/storage/${auth.user?.siswas?.qrcode_path}`}
                                                     alt={`QR Code ${auth.user.name}`}
-                                                    className="h-64 w-64 object-contain"
+                                                    className="h-48 w-48 sm:h-64 sm:w-64 object-contain"
                                                 />
                                             </div>
                                         </div>

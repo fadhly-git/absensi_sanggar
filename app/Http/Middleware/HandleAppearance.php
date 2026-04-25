@@ -16,7 +16,15 @@ class HandleAppearance
      */
     public function handle(Request $request, Closure $next): Response
     {
-        View::share('appearance', $request->cookie('appearance') ?? 'system');
+        $path = $request->path();
+        $isSiswaOrAdmin = str_starts_with($path, 'siswa') || str_starts_with($path, 'admin');
+
+        // Force dark theme for routes other than /siswa and /admin
+        $appearance = $isSiswaOrAdmin
+            ? ($request->cookie('appearance') ?? 'system')
+            : 'dark';
+
+        View::share('appearance', $appearance);
 
         return $next($request);
     }
