@@ -45,10 +45,11 @@ export class SiswaService {
             });
 
             // Gunakan route yang benar: /api/admin/siswa (tanpa tambahan)
-            const response = await apiClient.get<PaginatedSiswaResponse>(
+            const response = await apiClient.get<{ success: boolean; message: string; data: PaginatedSiswaResponse }>(
                 `${SiswaService.baseUrl}?${params.toString()}`
             );
-            return response.data;
+            // The API wraps the paginated payload in { success, message, data: ... }
+            return response.data.data;
         } catch (error) {
             console.error('Error fetching siswa:', error);
             throw error;
