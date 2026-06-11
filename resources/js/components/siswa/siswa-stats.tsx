@@ -3,6 +3,7 @@ import { Users, UserCheck, UserX, TrendingUp } from 'lucide-react';
 import { useSiswaStats } from '@/hooks/useSiswa';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatCard } from '@/components/ui/stat-card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 export function SiswaStats() {
     const { data: stats, isLoading, error } = useSiswaStats();
